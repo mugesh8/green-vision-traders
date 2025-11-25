@@ -1,0 +1,242 @@
+import React, { useState } from 'react';
+
+const AddInventory = ({ onClose, onAdd }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    category: '',
+    weight: '',
+    unit: '',
+    price: ''
+  });
+
+  const [errors, setErrors] = useState({});
+
+  const categories = ['Boxes', 'Bags', 'Tape', 'Paper', 'Plastic Covers'];
+  const units = ['kg', 'm', 'pcs', 'ltr'];
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+
+  const validate = () => {
+    const newErrors = {};
+    if (!formData.name.trim()) newErrors.name = 'Product name is required';
+    if (!formData.category) newErrors.category = 'Category is required';
+    if (!formData.weight || formData.weight <= 0) newErrors.weight = 'Valid weight/quantity is required';
+    if (!formData.unit) newErrors.unit = 'Unit type is required';
+    if (!formData.price || formData.price <= 0) newErrors.price = 'Valid price is required';
+    return newErrors;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const newErrors = validate();
+    
+    if (Object.keys(newErrors).length === 0) {
+      onAdd({
+        name: formData.name,
+        category: formData.category,
+        weight: parseFloat(formData.weight),
+        unit: formData.unit,
+        price: parseFloat(formData.price)
+      });
+      onClose();
+    } else {
+      setErrors(newErrors);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 className="text-xl font-semibold text-emerald-700">Add Inventory Item</h2>
+          <button
+            onClick={onClose}
+            className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-6">
+          <div className="space-y-5">
+            {/* Product Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Product Name
+                <span className="text-red-500 ml-1">*</span>
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="Enter product name"
+                className={`w-full px-4 py-2.5 border ${
+                  errors.name ? 'border-red-500' : 'border-gray-300'
+                } rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm placeholder-gray-400`}
+              />
+              {errors.name && (
+                <p className="mt-1 text-xs text-red-500">{errors.name}</p>
+              )}
+            </div>
+
+            {/* Category */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Category
+                <span className="text-red-500 ml-1">*</span>
+              </label>
+              <div className="relative">
+                <select
+                  name="category"
+                  value={formData.category}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-2.5 border ${
+                    errors.category ? 'border-red-500' : 'border-gray-300'
+                  } rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm appearance-none bg-white cursor-pointer ${
+                    !formData.category ? 'text-gray-400' : 'text-gray-900'
+                  }`}
+                >
+                  <option value="">Select category</option>
+                  {categories.map(cat => (
+                    <option key={cat} value={cat} className="text-gray-900">{cat}</option>
+                  ))}
+                </select>
+                <svg
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+              {errors.category && (
+                <p className="mt-1 text-xs text-red-500">{errors.category}</p>
+              )}
+            </div>
+
+            {/* Weight/Quantity and Unit Type */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Weight/Quantity per Unit
+                  <span className="text-red-500 ml-1">*</span>
+                </label>
+                <input
+                  type="number"
+                  name="weight"
+                  value={formData.weight}
+                  onChange={handleChange}
+                  placeholder="0"
+                  min="0"
+                  step="0.01"
+                  className={`w-full px-4 py-2.5 border ${
+                    errors.weight ? 'border-red-500' : 'border-gray-300'
+                  } rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm placeholder-gray-400`}
+                />
+                {errors.weight && (
+                  <p className="mt-1 text-xs text-red-500">{errors.weight}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Unit Type
+                  <span className="text-red-500 ml-1">*</span>
+                </label>
+                <div className="relative">
+                  <select
+                    name="unit"
+                    value={formData.unit}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-2.5 border ${
+                      errors.unit ? 'border-red-500' : 'border-gray-300'
+                    } rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm appearance-none bg-white cursor-pointer ${
+                      !formData.unit ? 'text-gray-400' : 'text-gray-900'
+                    }`}
+                  >
+                    <option value="">Select unit</option>
+                    {units.map(unit => (
+                      <option key={unit} value={unit} className="text-gray-900">{unit}</option>
+                    ))}
+                  </select>
+                  <svg
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+                {errors.unit && (
+                  <p className="mt-1 text-xs text-red-500">{errors.unit}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Price per Unit */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Price per Unit (₹)
+                <span className="text-red-500 ml-1">*</span>
+              </label>
+              <input
+                type="number"
+                name="price"
+                value={formData.price}
+                onChange={handleChange}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+                className={`w-full px-4 py-2.5 border ${
+                  errors.price ? 'border-red-500' : 'border-gray-300'
+                } rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm placeholder-gray-400`}
+              />
+              {errors.price && (
+                <p className="mt-1 text-xs text-red-500">{errors.price}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3 mt-8">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="flex-1 px-6 py-3 bg-emerald-500 text-white rounded-lg font-medium hover:bg-emerald-600 transition-colors"
+            >
+              Add Item
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default AddInventory;
