@@ -1,35 +1,42 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, MoreVertical } from 'lucide-react';
+import { Search, Plus, MoreVertical, Eye, Edit, Trash2 } from 'lucide-react';
 import ConfirmDeleteModal from '../../common/ConfirmDeleteModal';
 import { getAllVendors } from '../../../api/vendorApi';
+import { getAllProducts } from '../../../api/productApi';
 
 const VendorDashboard = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const dropdownRef = useRef(null);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, vendorId: null, vendorName: '' });
   const [vendors, setVendors] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch vendors from API
+  // Fetch vendors and products from API
   useEffect(() => {
-    const fetchVendors = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await getAllVendors(1, 100); // Fetch first 100 vendors
-        setVendors(response.data || []);
+        const [vendorsResponse, productsResponse] = await Promise.all([
+          getAllVendors(1, 100),
+          getAllProducts(1, 100)
+        ]);
+        setVendors(vendorsResponse.data || []);
+        setAllProducts(productsResponse.data || []);
       } catch (err) {
-        console.error('Error fetching vendors:', err);
-        setError('Failed to load vendors');
+        console.error('Error fetching data:', err);
+        setError('Failed to load data');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchVendors();
+    fetchData();
   }, []);
 
   // Close dropdown when clicking outside
@@ -43,6 +50,19 @@ const VendorDashboard = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const toggleDropdown = (vendorKey, event) => {
+    if (openDropdown === vendorKey) {
+      setOpenDropdown(null);
+    } else {
+      const rect = event.currentTarget.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.right + window.scrollX - 128 // 128px is dropdown width (w-32)
+      });
+      setOpenDropdown(vendorKey);
+    }
+  };
 
   const handleAction = (action, vendor) => {
     if (action === 'view') {
@@ -71,6 +91,7 @@ const VendorDashboard = () => {
 
   // Transform vendor data for display
   const transformVendorData = (vendor) => {
+    console.log('Transforming vendor:', vendor); // Debug log
     // Determine vendor type and ID
     let vendorType = vendor.vendor_type || 'Unknown';
     let vendorId = '';
@@ -80,6 +101,24 @@ const VendorDashboard = () => {
     let location = '';
     let products = [];
     
+    // Parse product_list JSON string and convert IDs to product names
+    let productIds = [];
+    if (vendor.product_list) {
+      try {
+        productIds = JSON.parse(vendor.product_list);
+      } catch (e) {
+        productIds = [];
+      }
+    }
+    
+    products = productIds.map(id => {
+      const product = allProducts.find(p => p.pid === id);
+      return {
+        name: product ? product.product_name : `Product ${id}`,
+        color: 'bg-[#D4F4E8] text-[#047857]'
+      };
+    });
+    
     if (vendor.vendor_type === 'farmer') {
       vendorType = 'Farmer';
       vendorId = vendor.fid || '';
@@ -87,7 +126,6 @@ const VendorDashboard = () => {
       contact = vendor.phone || vendor.primary_phone || '';
       email = vendor.email || '';
       location = `${vendor.city || ''}, ${vendor.state || ''}`;
-      products = vendor.detailed_products || vendor.products || [];
     } else if (vendor.vendor_type === 'supplier') {
       vendorType = 'Supplier';
       vendorId = vendor.sid || '';
@@ -95,7 +133,6 @@ const VendorDashboard = () => {
       contact = vendor.phone || vendor.primary_phone || '';
       email = vendor.email || '';
       location = `${vendor.city || ''}, ${vendor.state || ''}`;
-      products = vendor.detailed_products || vendor.products || [];
     } else if (vendor.vendor_type === 'third party') {
       vendorType = 'Third Party';
       vendorId = vendor.tpid || '';
@@ -103,7 +140,6 @@ const VendorDashboard = () => {
       contact = vendor.phone || vendor.primary_phone || '';
       email = vendor.email || '';
       location = `${vendor.city || ''}, ${vendor.state || ''}`;
-      products = vendor.detailed_products || vendor.products || [];
     }
 
     return {
@@ -114,10 +150,7 @@ const VendorDashboard = () => {
       contact,
       email,
       location,
-      products: products.map(product => ({
-        name: product.product_name || product.name || 'Unknown Product',
-        color: 'bg-[#D4F4E8] text-[#047857]'
-      })),
+      products,
       performance: vendor.performance || 'N/A',
       status: vendor.status || 'Active'
     };
@@ -273,18 +306,24 @@ const VendorDashboard = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-wrap gap-1.5">
-                      {vendor.products.slice(0, 2).map((product, idx) => (
-                        <span
-                          key={idx}
-                          className="px-3 py-1.5 rounded-full text-xs font-medium bg-[#D4F4E8] text-[#047857]"
-                        >
-                          {product.name}
-                        </span>
-                      ))}
-                      {vendor.products.length > 2 && (
-                        <span className="px-3 py-1.5 rounded-full text-xs font-medium bg-[#D4F4E8] text-[#047857]">
-                          +{vendor.products.length - 2} more
-                        </span>
+                      {vendor.products && vendor.products.length > 0 ? (
+                        <>
+                          {vendor.products.slice(0, 2).map((product, idx) => (
+                            <span
+                              key={idx}
+                              className="px-3 py-1.5 rounded-full text-xs font-medium bg-[#D4F4E8] text-[#047857]"
+                            >
+                              {product.name}
+                            </span>
+                          ))}
+                          {vendor.products.length > 2 && (
+                            <span className="px-3 py-1.5 rounded-full text-xs font-medium bg-[#0D7C66] text-white">
+                              +{vendor.products.length - 2}
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-xs text-[#6B8782]">No products</span>
                       )}
                     </div>
                   </td>
@@ -309,7 +348,7 @@ const VendorDashboard = () => {
                   </td>
 
                   <td className="px-6 py-4">
-                    <span className={`px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1 w-fit ${vendor.status === 'Active' ? 'bg-[#4ED39A] text-white' : 'bg-red-500 text-white'
+                    <span className={`px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1 w-fit ${vendor.status?.toLowerCase() === 'active' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
                       }`}>
                       <div className="w-2 h-2 rounded-full bg-white"></div>
                       {vendor.status}
@@ -317,37 +356,15 @@ const VendorDashboard = () => {
                   </td>
 
                   <td className="px-6 py-4">
-                    <div className="relative" ref={openDropdown === `${vendor.vendor_type}-${vendor.vendorId}` ? dropdownRef : null}>
-                      <button
-                        onClick={() => setOpenDropdown(openDropdown === `${vendor.vendor_type}-${vendor.vendorId}` ? null : `${vendor.vendor_type}-${vendor.vendorId}`)}
-                        className="text-[#6B8782] hover:text-[#0D5C4D] transition-colors p-1 hover:bg-[#F0F4F3] rounded"
-                      >
-                        <MoreVertical size={20} />
-                      </button>
-
-                      {openDropdown === `${vendor.vendor_type}-${vendor.vendorId}` && (
-                        <div className="absolute right-0 mt-2 w-32 bg-white rounded-lg shadow-lg border border-[#D0E0DB] py-1 z-10">
-                          <button
-                            onClick={() => handleAction('view', vendor)}
-                            className="w-full text-left px-4 py-2 text-sm text-[#0D5C4D] hover:bg-[#F0F4F3] transition-colors"
-                          >
-                            View
-                          </button>
-                          <button
-                            onClick={() => handleAction('edit', vendor)}
-                            className="w-full text-left px-4 py-2 text-sm text-[#0D5C4D] hover:bg-[#F0F4F3] transition-colors"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleAction('delete', vendor)}
-                            className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-[#F0F4F3] transition-colors"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleDropdown(`${vendor.vendor_type}-${vendor.vendorId}`, e);
+                      }}
+                      className="text-[#6B8782] hover:text-[#0D5C4D] transition-colors p-1 hover:bg-[#F0F4F3] rounded"
+                    >
+                      <MoreVertical size={20} />
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -379,6 +396,49 @@ const VendorDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Dropdown Menu - Fixed Position Outside Table */}
+      {openDropdown && (
+        <div
+          ref={dropdownRef}
+          className="fixed w-32 bg-white rounded-lg shadow-lg border border-[#D0E0DB] py-1 z-[100]"
+          style={{
+            top: `${dropdownPosition.top}px`,
+            left: `${dropdownPosition.left}px`
+          }}
+        >
+          <button
+            onClick={() => {
+              const vendor = transformedVendors.find(v => `${v.vendor_type}-${v.vendorId}` === openDropdown);
+              if (vendor) handleAction('view', vendor);
+            }}
+            className="w-full text-left px-4 py-2 text-sm text-[#0D5C4D] hover:bg-[#F0F4F3] transition-colors flex items-center gap-2"
+          >
+            <Eye size={14} />
+            View
+          </button>
+          <button
+            onClick={() => {
+              const vendor = transformedVendors.find(v => `${v.vendor_type}-${v.vendorId}` === openDropdown);
+              if (vendor) handleAction('edit', vendor);
+            }}
+            className="w-full text-left px-4 py-2 text-sm text-[#0D5C4D] hover:bg-[#F0F4F3] transition-colors flex items-center gap-2"
+          >
+            <Edit size={14} />
+            Edit
+          </button>
+          <button
+            onClick={() => {
+              const vendor = transformedVendors.find(v => `${v.vendor_type}-${v.vendorId}` === openDropdown);
+              if (vendor) handleAction('delete', vendor);
+            }}
+            className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-[#F0F4F3] transition-colors flex items-center gap-2"
+          >
+            <Trash2 size={14} />
+            Delete
+          </button>
+        </div>
+      )}
 
       <ConfirmDeleteModal
         isOpen={deleteModal.isOpen}

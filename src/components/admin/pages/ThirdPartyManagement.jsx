@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, Plus, MoreVertical, Eye, Edit, Trash2 } from 'lucide-react';
 import ConfirmDeleteModal from '../../common/ConfirmDeleteModal';
 import { getAllThirdParties } from '../../../api/thirdPartyApi';
+import { getAllProducts } from '../../../api/productApi';
 
 const ThirdPartyManagement = () => {
   const navigate = useNavigate();
@@ -11,8 +12,12 @@ const ThirdPartyManagement = () => {
   const dropdownRef = useRef(null);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, thirdPartyId: null, thirdPartyName: '' });
   const [thirdParties, setThirdParties] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const itemsPerPage = 10;
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -25,27 +30,31 @@ const ThirdPartyManagement = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Fetch third parties data from API
+  // Fetch third parties and products data from API
   useEffect(() => {
-    const fetchThirdParties = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await getAllThirdParties();
-        console.log('API Response:', response);
-        if (response.success) {
-          setThirdParties(response.data);
+        const [thirdPartiesResponse, productsResponse] = await Promise.all([
+          getAllThirdParties(),
+          getAllProducts(1, 100)
+        ]);
+        
+        if (thirdPartiesResponse.success) {
+          setThirdParties(thirdPartiesResponse.data);
         } else {
-          setError(response.message || 'Failed to fetch third parties');
+          setError(thirdPartiesResponse.message || 'Failed to fetch third parties');
         }
+        setAllProducts(productsResponse.data || []);
       } catch (err) {
-        console.error('Error fetching third parties:', err);
-        setError(err.message || 'An error occurred while fetching third parties');
+        console.error('Error fetching data:', err);
+        setError(err.message || 'An error occurred while fetching data');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchThirdParties();
+    fetchData();
   }, []);
 
   const toggleDropdown = (thirdPartyId, event) => {
@@ -81,10 +90,23 @@ const ThirdPartyManagement = () => {
       // Use profile image if available, otherwise generate avatar
       profileImage: thirdParty.profile_image,
       avatar: thirdParty.third_party_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase(),
-      products: thirdParty.detailed_products?.map(product => ({
-        name: product.product_name,
-        color: 'bg-[#D4F4E8] text-[#047857]'
-      })) || [],
+      products: (() => {
+        let productIds = [];
+        if (thirdParty.product_list) {
+          try {
+            productIds = JSON.parse(thirdParty.product_list);
+          } catch (e) {
+            productIds = [];
+          }
+        }
+        return productIds.map(id => {
+          const product = allProducts.find(p => p.pid === id);
+          return {
+            name: product ? product.product_name : `Product ${id}`,
+            color: 'bg-[#D4F4E8] text-[#047857]'
+          };
+        });
+      })(),
       contact: `+91 ${thirdParty.phone}`,
       email: thirdParty.email,
       location: `${thirdParty.city}, ${thirdParty.state}`,
@@ -109,6 +131,19 @@ const ThirdPartyManagement = () => {
   };
 
   const transformedThirdParties = transformThirdPartiesData(thirdParties);
+  
+  // Filter and paginate data
+  const filteredThirdParties = transformedThirdParties.filter(tp => 
+    tp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    tp.contact.includes(searchQuery) ||
+    tp.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    tp.location.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  
+  const totalPages = Math.ceil(filteredThirdParties.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedThirdParties = filteredThirdParties.slice(startIndex, startIndex + itemsPerPage);
+  
   const stats = calculateStats(thirdParties);
 
   // Show loading state
@@ -174,6 +209,11 @@ const ThirdPartyManagement = () => {
         <input
           type="text"
           placeholder="Search third party by name, contact, or location..."
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setCurrentPage(1);
+          }}
           className="w-full pl-12 pr-4 py-3 bg-[#F0F4F3] border-none rounded-xl text-[#0D5C4D] placeholder-[#6B8782] focus:outline-none focus:ring-2 focus:ring-[#0D8568]"
         />
       </div>
@@ -193,7 +233,7 @@ const ThirdPartyManagement = () => {
               </tr>
             </thead>
             <tbody>
-              {transformedThirdParties.map((thirdParty, index) => (
+              {paginatedThirdParties.map((thirdParty, index) => (
                 <tr 
                   key={thirdParty.id} 
                   className={`border-b border-[#D0E0DB] hover:bg-[#F0F4F3] transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-[#F0F4F3]/30'}`}
@@ -225,14 +265,25 @@ const ThirdPartyManagement = () => {
 
                   <td className="px-6 py-4">
                     <div className="flex flex-wrap gap-1.5">
-                      {thirdParty.products.map((product, idx) => (
-                        <span
-                          key={idx}
-                          className="px-3 py-1.5 rounded-full text-xs font-medium bg-[#D4F4E8] text-[#047857]"
-                        >
-                          {product.name}
-                        </span>
-                      ))}
+                      {thirdParty.products.length > 0 ? (
+                        <>
+                          {thirdParty.products.slice(0, 2).map((product, idx) => (
+                            <span
+                              key={idx}
+                              className="px-3 py-1.5 rounded-full text-xs font-medium bg-[#D4F4E8] text-[#047857]"
+                            >
+                              {product.name}
+                            </span>
+                          ))}
+                          {thirdParty.products.length > 2 && (
+                            <span className="px-3 py-1.5 rounded-full text-xs font-medium bg-[#0D7C66] text-white">
+                              +{thirdParty.products.length - 2}
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-xs text-[#6B8782]">No products</span>
+                      )}
                     </div>
                   </td>
 
@@ -277,34 +328,32 @@ const ThirdPartyManagement = () => {
 
         <div className="flex items-center justify-between px-6 py-4 bg-[#F0F4F3] border-t border-[#D0E0DB]">
           <div className="text-sm text-[#6B8782]">
-            Showing {transformedThirdParties.length} of {transformedThirdParties.length} third party
+            Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredThirdParties.length)} of {filteredThirdParties.length} third parties
           </div>
           <div className="flex items-center gap-2">
-            <button className="px-3 py-2 text-[#6B8782] hover:bg-[#D0E0DB] rounded-lg transition-colors">
+            <button 
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-2 text-[#6B8782] hover:bg-[#D0E0DB] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               &lt;
             </button>
-            <button className="px-4 py-2 rounded-lg font-medium transition-colors bg-[#0D8568] text-white">
-              1
-            </button>
-            <button className="px-4 py-2 rounded-lg font-medium transition-colors text-[#6B8782] hover:bg-[#D0E0DB]">
-              2
-            </button>
-            <button className="px-4 py-2 rounded-lg font-medium transition-colors text-[#6B8782] hover:bg-[#D0E0DB]">
-              3
-            </button>
-            <button className="px-4 py-2 rounded-lg font-medium transition-colors text-[#6B8782] hover:bg-[#D0E0DB]">
-              4
-            </button>
-            <button className="px-4 py-2 rounded-lg font-medium transition-colors text-[#6B8782] hover:bg-[#D0E0DB]">
-              5
-            </button>
-            <button className="px-3 py-2 text-[#6B8782] hover:bg-[#D0E0DB] rounded-lg transition-colors">
-              ...
-            </button>
-            <button className="px-4 py-2 rounded-lg font-medium transition-colors text-[#6B8782] hover:bg-[#D0E0DB]">
-              10
-            </button>
-            <button className="px-3 py-2 text-[#6B8782] hover:bg-[#D0E0DB] rounded-lg transition-colors">
+            {[...Array(totalPages)].map((_, i) => (
+              <button 
+                key={i + 1}
+                onClick={() => setCurrentPage(i + 1)}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  currentPage === i + 1 ? 'bg-[#0D8568] text-white' : 'text-[#6B8782] hover:bg-[#D0E0DB]'
+                }`}
+              >
+                {i + 1}
+              </button>
+            ))}
+            <button 
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-2 text-[#6B8782] hover:bg-[#D0E0DB] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               &gt;
             </button>
           </div>
