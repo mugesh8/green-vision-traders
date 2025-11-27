@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Upload, Eye, EyeOff, ChevronRight, ArrowLeft } from 'lucide-react';
+import { createDriver } from '../../../api/driverApi';
 
 const AddDriver = () => {
   const navigate = useNavigate();
@@ -9,6 +10,9 @@ const AddDriver = () => {
     phoneNumber: '',
     email: '',
     address: '',
+    city: '',
+    state: '',
+    pinCode: '',
     password: '',
     licenseNumber: '',
     vehicleType: '',
@@ -33,6 +37,7 @@ const AddDriver = () => {
   ]);
   const [showNewVehicleInput, setShowNewVehicleInput] = useState(false);
   const [newVehicleType, setNewVehicleType] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -68,10 +73,43 @@ const AddDriver = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
-    navigate('/drivers');
+    setLoading(true);
+    
+    try {
+      const formDataToSend = new FormData();
+      
+      formDataToSend.append('driver_name', formData.driverName);
+      formDataToSend.append('phone_number', formData.phoneNumber);
+      formDataToSend.append('email', formData.email);
+      formDataToSend.append('address', formData.address);
+      formDataToSend.append('city', formData.city);
+      formDataToSend.append('state', formData.state);
+      formDataToSend.append('pin_code', formData.pinCode);
+      formDataToSend.append('password', formData.password);
+      formDataToSend.append('license_number', formData.licenseNumber);
+      formDataToSend.append('vehicle_type', formData.vehicleType);
+      formDataToSend.append('vehicle_number', formData.vehicleNumber);
+      formDataToSend.append('capacity', formData.capacity);
+      formDataToSend.append('insurance_number', formData.insuranceNumber);
+      formDataToSend.append('insurance_expiry_date', formData.insuranceExpiry);
+      formDataToSend.append('vehicle_condition', formData.vehicleCondition);
+      formDataToSend.append('delivery_type', formData.deliveryType === 'collection' ? 'Collection Delivery' : 
+                           formData.deliveryType === 'airport' ? 'Airport Delivery' : 'Both Types');
+      formDataToSend.append('status', formData.isActive ? 'Available' : 'Inactive');
+      
+      if (licenseImage) formDataToSend.append('driver_image', licenseImage);
+      if (idProof) formDataToSend.append('driver_id_proof', idProof);
+      
+      await createDriver(formDataToSend);
+      navigate('/drivers');
+    } catch (error) {
+      console.error('Error creating driver:', error);
+      alert(error.message || 'Failed to create driver. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -155,6 +193,53 @@ const AddDriver = () => {
                   value={formData.address}
                   onChange={handleInputChange}
                   placeholder="Enter complete address"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                />
+              </div>
+
+              {/* City */}
+              <div>
+                <label className="block text-sm text-gray-700 mb-2">
+                  City
+                </label>
+                <input
+                  type="text"
+                  name="city"
+                  value={formData.city}
+                  onChange={handleInputChange}
+                  placeholder="Enter city"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                />
+              </div>
+
+              {/* State */}
+              <div>
+                <label className="block text-sm text-gray-700 mb-2">
+                  State
+                </label>
+                <input
+                  type="text"
+                  name="state"
+                  value={formData.state}
+                  onChange={handleInputChange}
+                  placeholder="Enter state"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+              {/* Pin Code */}
+              <div>
+                <label className="block text-sm text-gray-700 mb-2">
+                  Pin Code
+                </label>
+                <input
+                  type="text"
+                  name="pinCode"
+                  value={formData.pinCode}
+                  onChange={handleInputChange}
+                  placeholder="Enter pin code"
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
                 />
               </div>
@@ -547,10 +632,12 @@ const AddDriver = () => {
               </button>
               <button
                 type="submit"
-                className="px-6 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+                disabled={loading}
+                className="px-6 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-sm font-medium transition-colors shadow-sm disabled:opacity-50"
               >
-                Add Driver
+                {loading ? 'Adding Driver...' : 'Add Driver'}
               </button>
+
             </div>
           </div>
         </form>
