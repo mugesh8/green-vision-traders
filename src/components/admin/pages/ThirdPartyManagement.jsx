@@ -94,7 +94,8 @@ const ThirdPartyManagement = () => {
         let productIds = [];
         if (thirdParty.product_list) {
           try {
-            productIds = JSON.parse(thirdParty.product_list);
+            const parsed = JSON.parse(thirdParty.product_list);
+            productIds = Array.isArray(parsed) ? parsed : [];
           } catch (e) {
             productIds = [];
           }
@@ -123,10 +124,10 @@ const ThirdPartyManagement = () => {
     const totalCount = data.length;
     
     return [
-      { label: 'Total Third Party', value: totalCount.toString(), change: '+12%', color: 'bg-gradient-to-r from-[#D1FAE5] to-[#A7F3D0]' },
-      { label: 'Active Third Party', value: activeCount.toString(), change: '+8%', color: 'bg-gradient-to-r from-[#6EE7B7] to-[#34D399]' },
-      { label: 'Pending Payouts', value: '₹12.4 L', change: '24 Third Party', color: 'bg-gradient-to-r from-[#10B981] to-[#059669]' },
-      { label: 'Total Paid (Month)', value: '₹2.8 L', change: '156 Transactions', color: 'bg-gradient-to-r from-[#047857] to-[#065F46]' }
+      { label: 'Total Third Party', value: totalCount.toString(), change: '', color: 'bg-gradient-to-r from-[#D1FAE5] to-[#A7F3D0]' },
+      { label: 'Active Third Party', value: activeCount.toString(), change: '', color: 'bg-gradient-to-r from-[#6EE7B7] to-[#34D399]' },
+      { label: 'Pending Payouts', value: '₹12.4 L', color: 'bg-gradient-to-r from-[#10B981] to-[#059669]' },
+      { label: 'Total Paid (Month)', value: '₹2.8 L', color: 'bg-gradient-to-r from-[#047857] to-[#065F46]' }
     ];
   };
 
@@ -196,10 +197,12 @@ const ThirdPartyManagement = () => {
             className={`${stat.color} rounded-2xl p-6 ${index === 2 || index === 3 ? 'text-white' : 'text-[#0D5C4D]'}`}
           >
             <div className="text-sm font-medium mb-2 opacity-90">{stat.label}</div>
-            <div className="text-4xl font-bold mb-2">{stat.value}</div>
-            <div className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${index === 2 || index === 3 ? 'bg-white/20 text-white' : 'bg-white/60 text-[#0D5C4D]'}`}>
-              {stat.change}
-            </div>
+            <div className="text-4xl font-bold">{stat.value}</div>
+            {stat.change && (
+              <div className={`inline-block px-3 py-1 rounded-full text-xs font-medium mt-2 ${index === 2 || index === 3 ? 'bg-white/20 text-white' : 'bg-white/60 text-[#0D5C4D]'}`}>
+                {stat.change}
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -240,22 +243,20 @@ const ThirdPartyManagement = () => {
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-[#B8F4D8] flex items-center justify-center text-[#0D5C4D] font-semibold text-sm">
-                        {thirdParty.profileImage ? (
-                          <img 
-                            src={`http://localhost:8000${thirdParty.profileImage}`} 
-                            alt={thirdParty.name}
-                            className="w-10 h-10 rounded-full object-cover"
-                            onError={(e) => {
-                              // Fallback to avatar if image fails to load
-                              e.target.style.display = 'none';
-                              e.target.nextSibling.style.display = 'flex';
-                            }}
-                          />
-                        ) : (
-                          thirdParty.avatar
-                        )}
-                      </div>
+                      {thirdParty.profileImage ? (
+                        <img 
+                          src={`http://localhost:8000${thirdParty.profileImage}`} 
+                          alt={thirdParty.name}
+                          className="w-10 h-10 rounded-full object-cover"
+                          onError={(e) => {
+                            e.target.outerHTML = `<div class="w-10 h-10 rounded-full bg-[#B8F4D8] flex items-center justify-center text-[#0D5C4D] font-semibold text-sm">${thirdParty.avatar}</div>`;
+                          }}
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-[#B8F4D8] flex items-center justify-center text-[#0D5C4D] font-semibold text-sm">
+                          {thirdParty.avatar}
+                        </div>
+                      )}
                       <div>
                         <div className="font-semibold text-[#0D5C4D]">{thirdParty.name}</div>
                         <div className="text-xs text-[#6B8782]">{thirdParty.thirdPartyId}</div>

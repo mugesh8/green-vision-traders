@@ -1,18 +1,47 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { TrendingUp, Check, Package as PackageIcon, DollarSign } from 'lucide-react';
+import { getAllFarmers } from '../../../api/farmerApi';
+import { getAllDrivers } from '../../../api/driverApi';
+import { getAllLabours } from '../../../api/labourApi';
 
 const Dashboard = () => {
+  const [totalFarmers, setTotalFarmers] = useState(0);
+  const [activeDrivers, setActiveDrivers] = useState(0);
+  const [totalLabours, setTotalLabours] = useState(0);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const [farmersRes, driversRes, laboursRes] = await Promise.all([
+          getAllFarmers(),
+          getAllDrivers(),
+          getAllLabours()
+        ]);
+        console.log('Drivers response:', driversRes);
+        setTotalFarmers(farmersRes.data?.length || 0);
+        const drivers = driversRes.data || [];
+        const activeCount = drivers.filter(d => d.status?.toLowerCase() === 'active').length;
+        console.log('Active drivers count:', activeCount);
+        setActiveDrivers(activeCount);
+        setTotalLabours(laboursRes.data?.length || 0);
+      } catch (error) {
+        console.error('Failed to fetch stats:', error);
+      }
+    };
+    fetchStats();
+  }, []);
+
   // Stats data
   const stats = [
     {
       title: 'Total Farmers',
-      value: '248',
+      value: totalFarmers.toString(),
       bgColor: 'bg-gradient-to-r from-[#D1FAE5] to-[#A7F3D0]',
       textColor: 'text-[#0D5C4D]'
     },
     {
       title: 'Active Drivers',
-      value: '42',
+      value: activeDrivers.toString(),
       bgColor: 'bg-gradient-to-r from-[#6EE7B7] to-[#34D399]',
       textColor: 'text-[#0D5C4D]'
     },
@@ -24,7 +53,7 @@ const Dashboard = () => {
     },
     {
       title: 'Total Labours',
-      value: '156',
+      value: totalLabours.toString(),
       bgColor: 'bg-gradient-to-r from-[#047857] to-[#065F46]',
       textColor: 'text-white'
     }

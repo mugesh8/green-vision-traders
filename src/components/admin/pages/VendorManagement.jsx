@@ -105,7 +105,8 @@ const VendorDashboard = () => {
     let productIds = [];
     if (vendor.product_list) {
       try {
-        productIds = JSON.parse(vendor.product_list);
+        const parsed = JSON.parse(vendor.product_list);
+        productIds = Array.isArray(parsed) ? parsed : [];
       } catch (e) {
         productIds = [];
       }

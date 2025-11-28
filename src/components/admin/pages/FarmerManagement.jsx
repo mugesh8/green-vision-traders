@@ -140,9 +140,12 @@ const Farmers = () => {
     setOpenDropdown(null);
   };
 
+  const totalFarmers = allFarmers.length;
+  const activeFarmers = allFarmers.filter(f => f.status === 'active').length;
+
   const stats = [
-    { label: 'Total Farmers', value: '248', color: 'bg-gradient-to-r from-[#D1FAE5] to-[#A7F3D0]' },
-    { label: 'Active Farmers', value: '42', color: 'bg-gradient-to-r from-[#6EE7B7] to-[#34D399]' },
+    { label: 'Total Farmers', value: totalFarmers.toString(), color: 'bg-gradient-to-r from-[#D1FAE5] to-[#A7F3D0]' },
+    { label: 'Active Farmers', value: activeFarmers.toString(), color: 'bg-gradient-to-r from-[#6EE7B7] to-[#34D399]' },
     { label: 'Pending Payouts', value: '309,847', color: 'bg-gradient-to-r from-[#10B981] to-[#059669]' },
     { label: 'Total Paid (Month)', value: '156', color: 'bg-gradient-to-r from-[#047857] to-[#065F46]' }
   ];

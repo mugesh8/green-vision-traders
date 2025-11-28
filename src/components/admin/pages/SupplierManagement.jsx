@@ -127,9 +127,12 @@ const SupplierDashboard = () => {
     }
   };
 
+  const totalSuppliers = allSuppliers.length;
+  const activeSuppliers = allSuppliers.filter(s => s.status === 'active').length;
+
   const stats = [
-    { label: 'Total Suppliers', value: '86', color: 'bg-gradient-to-r from-[#D1FAE5] to-[#A7F3D0]' },
-    { label: 'Active Suppliers', value: '72', color: 'bg-gradient-to-r from-[#6EE7B7] to-[#34D399]' },
+    { label: 'Total Suppliers', value: totalSuppliers.toString(), color: 'bg-gradient-to-r from-[#D1FAE5] to-[#A7F3D0]' },
+    { label: 'Active Suppliers', value: activeSuppliers.toString(), color: 'bg-gradient-to-r from-[#6EE7B7] to-[#34D399]' },
     { label: 'Pending Payouts', value: '₹12.4 L', color: 'bg-gradient-to-r from-[#10B981] to-[#059669]' },
     { label: 'Total Paid (Month)', value: '₹2.8 L', color: 'bg-gradient-to-r from-[#047857] to-[#065F46]' }
   ];

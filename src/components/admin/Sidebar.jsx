@@ -19,6 +19,7 @@ import {
   Plus,
   Archive
 } from 'lucide-react';
+import logo from '../../assets/logo.jpg';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
@@ -65,10 +66,10 @@ const Sidebar = ({ isOpen, onClose }) => {
       {/* Logo */}
       <div className="p-4 sm:p-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-        <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-          <Leaf className="w-6 h-6 text-[#0D7C66]" />
+        <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center overflow-hidden">
+          <img src={logo} alt="Logo" className="w-full h-full object-cover" />
         </div>
-          <span className="text-xl font-bold">VeggiChain</span>
+          <span className="text-xl font-bold">Green Vision Traders</span>
         </div>
         <button 
           onClick={onClose}

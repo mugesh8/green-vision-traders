@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { loginAdmin } from '../../../api/authApi';
+import logo from '../../../assets/logo.jpg';
 
 const VeggiChainLogin = () => {
   const navigate = useNavigate();
@@ -107,39 +108,14 @@ const VeggiChainLogin = () => {
       <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 relative z-10">
         {/* Logo */}
         <div className="flex justify-center mb-6">
-          <div className="relative">
-            <div className="w-20 h-20 bg-gradient-to-br from-teal-700 to-teal-600 rounded-full flex items-center justify-center shadow-lg">
-              <div className="w-16 h-16 bg-teal-700 rounded-full flex items-center justify-center">
-                <svg 
-                  viewBox="0 0 40 40" 
-                  className="w-10 h-10"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <ellipse 
-                    cx="20" 
-                    cy="20" 
-                    rx="12" 
-                    ry="8" 
-                    fill="white"
-                    opacity="0.9"
-                  />
-                  <ellipse 
-                    cx="20" 
-                    cy="19" 
-                    rx="8" 
-                    ry="5" 
-                    fill="#0D7C66"
-                  />
-                </svg>
-              </div>
-            </div>
+          <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg overflow-hidden p-2">
+            <img src={logo} alt="Logo" className="w-full h-full object-contain" />
           </div>
         </div>
 
         {/* Title */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-teal-700 mb-1">VeggiChain</h1>
+          <h1 className="text-3xl font-bold text-teal-700 mb-1">Green Vision Traders</h1>
           <p className="text-gray-500 text-sm mb-6">Supply Chain Management</p>
           <h2 className="text-2xl font-bold text-gray-800 mb-1">Welcome Back!</h2>
           <p className="text-gray-500 text-sm">Sign in to continue to your account</p>
