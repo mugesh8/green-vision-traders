@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Plus, X } from 'lucide-react';
 import { getThirdPartyById, updateThirdParty } from '../../../api/thirdPartyApi';
-import { getAllProducts } from '../../../api/productApi'; // Import product API
+import { getAllProducts } from '../../../api/productApi';
+import { BASE_URL } from '../../../config/config';
 
 const EditThirdParty = () => {
   const navigate = useNavigate();
@@ -87,7 +88,7 @@ const EditThirdParty = () => {
         
         // Set profile image preview if exists
         if (thirdParty.profile_image) {
-          setProfileImagePreview(`http://localhost:8000${thirdParty.profile_image}`);
+          setProfileImagePreview(`${BASE_URL}${thirdParty.profile_image}`);
         }
       } catch (err) {
         console.error('Error fetching third party:', err);

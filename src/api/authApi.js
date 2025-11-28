@@ -1,4 +1,4 @@
-import api from '../api/axiosConfig'
+import api from './axiosConfig';
 
 export const loginAdmin = async (email, password) => {
   const response = await api.post ('/admin/login', {

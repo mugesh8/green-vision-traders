@@ -13,6 +13,7 @@ import {
 import ConfirmDeleteModal from '../../common/ConfirmDeleteModal';
 import { getAllFarmers, deleteFarmer } from '../../../api/farmerApi';
 import { getAllProducts } from '../../../api/productApi';
+import { BASE_URL } from '../../../config/config';
 
 const Farmers = () => {
   const navigate = useNavigate();
@@ -240,7 +241,7 @@ const Farmers = () => {
                       <div className="w-10 h-10 rounded-full bg-[#B8F4D8] flex items-center justify-center text-[#0D5C4D] font-semibold text-sm overflow-hidden">
                         {farmer.profile_image ? (
                           <img 
-                            src={`http://localhost:8000${farmer.profile_image}`}
+                            src={`${BASE_URL}${farmer.profile_image}`}
                             alt={farmer.farmer_name}
                             className="w-full h-full object-cover"
                             onError={(e) => {

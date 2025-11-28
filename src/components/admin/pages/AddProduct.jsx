@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Plus, X } from 'lucide-react';
 import { createCategory, getAllCategories, updateCategory, deleteCategory } from '../../../api/categoryApi';
 import { createProduct, getAllProducts, updateProduct, deleteProduct } from '../../../api/productApi';
+import { BASE_URL } from '../../../config/config';
 
 const AddProduct = () => {
   const [activeTab, setActiveTab] = useState('product');
@@ -238,7 +239,7 @@ const AddProduct = () => {
                   <tr key={vegetable.pid} className={`border-b border-[#D0E0DB] hover:bg-[#F0F4F3] transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-[#F0F4F3]/30'}`}>
                     <td className="px-6 py-4">
                       {vegetable.product_image ? (
-                        <img src={`http://localhost:8000${vegetable.product_image}`} alt={vegetable.product_name} className="w-12 h-12 rounded-lg object-cover" />
+                        <img src={`${BASE_URL}${vegetable.product_image}`} alt={vegetable.product_name} className="w-12 h-12 rounded-lg object-cover" />
                       ) : (
                         <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 text-xs">No Image</div>
                       )}
@@ -338,7 +339,7 @@ const AddProduct = () => {
                   <tr key={category.cid} className={`border-b border-[#D0E0DB] hover:bg-[#F0F4F3] transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-[#F0F4F3]/30'}`}>
                     <td className="px-6 py-4">
                       {category.category_image ? (
-                        <img src={`http://localhost:8000${category.category_image}`} alt={category.categoryname} className="w-12 h-12 rounded-lg object-cover" />
+                        <img src={`${BASE_URL}${category.category_image}`} alt={category.categoryname} className="w-12 h-12 rounded-lg object-cover" />
                       ) : (
                         <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 text-xs">No Image</div>
                       )}

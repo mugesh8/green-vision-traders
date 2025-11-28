@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { getAllLabours, deleteLabour } from '../../../api/labourApi';
 import ConfirmDeleteModal from '../../common/ConfirmDeleteModal';
+import { BASE_URL } from '../../../config/config';
 
 const LabourManagement = () => {
   const navigate = useNavigate();
@@ -274,7 +275,7 @@ const LabourManagement = () => {
                       <div className={`w-10 h-10 rounded-full ${labour.avatarBg} flex items-center justify-center text-white font-semibold text-sm flex-shrink-0 overflow-hidden`}>
                         {labour.profileImage ? (
                           <img
-                            src={`http://localhost:8000${labour.profileImage}`}
+                            src={`${BASE_URL}${labour.profileImage}`}
                             alt={labour.name}
                             className="w-full h-full object-cover"
                             onError={(e) => {

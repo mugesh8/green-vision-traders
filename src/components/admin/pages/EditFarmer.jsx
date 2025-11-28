@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Plus, X } from 'lucide-react';
 import { getFarmerById, updateFarmer } from '../../../api/farmerApi';
 import { getAllProducts } from '../../../api/productApi';
+import { BASE_URL } from '../../../config/config';
 
 const EditFarmer = () => {
   const navigate = useNavigate();
@@ -74,7 +75,7 @@ const EditFarmer = () => {
         });
         
         if (data.profile_image) {
-          setProfileImagePreview(`http://localhost:8000${data.profile_image}`);
+          setProfileImagePreview(`${BASE_URL}${data.profile_image}`);
         }
         
         if (data.product_list && Array.isArray(data.product_list)) {

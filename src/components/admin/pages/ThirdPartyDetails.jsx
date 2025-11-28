@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Phone, Mail, MapPin, TrendingUp, Package, ArrowLeft } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getThirdPartyById } from '../../../api/thirdPartyApi'; // Import the API function
+import { getThirdPartyById } from '../../../api/thirdPartyApi';
+import { BASE_URL } from '../../../config/config';
 
 const ThirdPartyDetails = () => {
   const navigate = useNavigate();
@@ -140,7 +141,7 @@ const ThirdPartyDetails = () => {
           <div className="w-24 h-24 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
             {transformedData?.profileImage ? (
               <img 
-                src={`http://localhost:8000${transformedData.profileImage}`} 
+                src={`${BASE_URL}${transformedData.profileImage}`} 
                 alt={transformedData?.name || 'Third Party'}
                 className="w-full h-full object-cover"
               />

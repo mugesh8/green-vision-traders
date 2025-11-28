@@ -4,6 +4,7 @@ import { Search, Plus, MoreVertical, Eye, Edit, Trash2 } from 'lucide-react';
 import ConfirmDeleteModal from '../../common/ConfirmDeleteModal';
 import { getAllVendors } from '../../../api/vendorApi';
 import { getAllProducts } from '../../../api/productApi';
+import { BASE_URL } from '../../../config/config';
 
 const VendorDashboard = () => {
   const navigate = useNavigate();
@@ -280,7 +281,7 @@ const VendorDashboard = () => {
                       <div className="w-10 h-10 rounded-full bg-[#B8F4D8] flex items-center justify-center text-[#0D5C4D] font-semibold text-sm">
                         {vendor.profile_image ? (
                           <img
-                            src={`http://localhost:8000${vendor.profile_image}`}
+                            src={`${BASE_URL}${vendor.profile_image}`}
                             alt={vendor.name}
                             className="w-10 h-10 rounded-full object-cover"
                             onError={(e) => {

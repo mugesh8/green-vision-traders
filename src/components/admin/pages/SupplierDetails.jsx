@@ -3,6 +3,7 @@ import { Phone, Mail, MapPin, TrendingUp, Package, ArrowLeft } from 'lucide-reac
 import { useNavigate, useParams } from 'react-router-dom';
 import { getSupplierById } from '../../../api/supplierApi';
 import { getAllProducts } from '../../../api/productApi';
+import { BASE_URL } from '../../../config/config';
 
 const SupplierDetails = () => {
   const navigate = useNavigate();
@@ -107,7 +108,7 @@ const SupplierDetails = () => {
           <div className="w-24 h-24 bg-teal-800 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
             {supplier?.profile_image ? (
               <img 
-                src={`http://localhost:8000${supplier.profile_image}`}
+                src={`${BASE_URL}${supplier.profile_image}`}
                 alt={supplier?.supplier_name || 'Supplier'}
                 className="w-full h-full object-cover"
                 onError={(e) => {

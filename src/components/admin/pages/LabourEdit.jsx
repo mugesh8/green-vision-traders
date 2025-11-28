@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Camera, Calendar, ArrowLeft } from 'lucide-react';
 import { getLabourById, updateLabour } from '../../../api/labourApi';
+import { BASE_URL } from '../../../config/config';
 
 const EditLabour = () => {
   const navigate = useNavigate();
@@ -53,7 +54,7 @@ const EditLabour = () => {
           joiningDate: data.joining_date
         });
         if (data.profile_image) {
-          setPhotoPreview(`http://localhost:8000${data.profile_image}`);
+          setPhotoPreview(`${BASE_URL}${data.profile_image}`);
         }
       } catch (error) {
         console.error('Error fetching labour:', error);

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Phone, Mail, MapPin, TrendingUp, Package, ArrowLeft, User, Calendar, Clock } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getLabourById } from '../../../api/labourApi';
+import { BASE_URL } from '../../../config/config';
 
 const LabourDetails = () => {
   const navigate = useNavigate();
@@ -164,7 +165,7 @@ const LabourDetails = () => {
           <div className="w-24 h-24 bg-teal-700 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
             {labour?.profileImage ? (
               <img
-                src={`http://localhost:8000${labour.profileImage}`}
+                src={`${BASE_URL}${labour.profileImage}`}
                 alt={labour.name}
                 className="w-full h-full object-cover"
                 onError={(e) => {

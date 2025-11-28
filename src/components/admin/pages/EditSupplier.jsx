@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Plus, X } from 'lucide-react';
 import { getSupplierById, updateSupplier } from '../../../api/supplierApi';
 import { getAllProducts } from '../../../api/productApi';
+import { BASE_URL } from '../../../config/config';
 
 const EditSupplier = () => {
   const navigate = useNavigate();
@@ -75,7 +76,7 @@ const EditSupplier = () => {
         });
 
         if (supplier.profile_image) {
-          setProfileImagePreview(`http://localhost:8000${supplier.profile_image}`);
+          setProfileImagePreview(`${BASE_URL}${supplier.profile_image}`);
         }
 
         const allProducts = productsResponse.data || [];

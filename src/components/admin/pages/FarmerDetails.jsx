@@ -3,6 +3,7 @@ import { Phone, Mail, MapPin, TrendingUp, Package, ArrowLeft } from 'lucide-reac
 import { useNavigate, useParams } from 'react-router-dom';
 import { getFarmerById } from '../../../api/farmerApi';
 import { getAllProducts } from '../../../api/productApi';
+import { BASE_URL } from '../../../config/config';
 
 const FarmerDetails = () => {
   const navigate = useNavigate();
@@ -110,7 +111,7 @@ const FarmerDetails = () => {
           <div className="w-24 h-24 bg-teal-800 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
             {farmer?.profile_image ? (
               <img 
-                src={`http://localhost:8000${farmer.profile_image}`}
+                src={`${BASE_URL}${farmer.profile_image}`}
                 alt={farmer?.farmer_name || 'Farmer'}
                 className="w-full h-full object-cover"
                 onError={(e) => {

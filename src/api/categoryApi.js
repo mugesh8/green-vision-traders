@@ -1,4 +1,4 @@
-import api from '../api/axiosConfig'
+import api from './axiosConfig';
 
 export const createCategory = async (formData) => {
   const token = localStorage.getItem('token');

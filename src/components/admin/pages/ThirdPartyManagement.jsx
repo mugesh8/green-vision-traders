@@ -4,6 +4,7 @@ import { Search, Plus, MoreVertical, Eye, Edit, Trash2 } from 'lucide-react';
 import ConfirmDeleteModal from '../../common/ConfirmDeleteModal';
 import { getAllThirdParties } from '../../../api/thirdPartyApi';
 import { getAllProducts } from '../../../api/productApi';
+import { BASE_URL } from '../../../config/config';
 
 const ThirdPartyManagement = () => {
   const navigate = useNavigate();
@@ -245,7 +246,7 @@ const ThirdPartyManagement = () => {
                     <div className="flex items-center gap-3">
                       {thirdParty.profileImage ? (
                         <img 
-                          src={`http://localhost:8000${thirdParty.profileImage}`} 
+                          src={`${BASE_URL}${thirdParty.profileImage}`} 
                           alt={thirdParty.name}
                           className="w-10 h-10 rounded-full object-cover"
                           onError={(e) => {

@@ -1,4 +1,4 @@
-import api from '../api/axiosConfig'
+import api from './axiosConfig';
 
 export const createProduct = async (formData) => {
   const token = localStorage.getItem('token');
