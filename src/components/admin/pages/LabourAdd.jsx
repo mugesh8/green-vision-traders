@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Camera, Calendar } from 'lucide-react';
+import { createLabour } from '../../../api/labourApi';
 
 const AddLabour = () => {
   const navigate = useNavigate();
@@ -19,6 +20,8 @@ const AddLabour = () => {
   });
 
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [profileImage, setProfileImage] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -31,6 +34,7 @@ const AddLabour = () => {
   const handlePhotoUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setProfileImage(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setPhotoPreview(reader.result);
@@ -39,10 +43,33 @@ const AddLabour = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
-    // Add your form submission logic here
+    setLoading(true);
+    
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append('full_name', formData.fullName);
+      formDataToSend.append('mobile_number', formData.mobileNumber);
+      formDataToSend.append('aadhaar_number', formData.aadhaarNumber);
+      formDataToSend.append('date_of_birth', formData.dateOfBirth);
+      formDataToSend.append('gender', formData.gender.charAt(0).toUpperCase() + formData.gender.slice(1));
+      formDataToSend.append('blood_group', formData.bloodGroup);
+      formDataToSend.append('address', formData.address);
+      formDataToSend.append('department', formData.department.charAt(0).toUpperCase() + formData.department.slice(1));
+      formDataToSend.append('daily_wage', formData.dailyWage);
+      formDataToSend.append('joining_date', formData.joiningDate);
+      
+      if (profileImage) formDataToSend.append('profile_image', profileImage);
+      
+      await createLabour(formDataToSend);
+      navigate('/labour');
+    } catch (error) {
+      console.error('Error creating labour:', error);
+      alert(error.message || 'Failed to create labour. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancel = () => {
@@ -344,9 +371,10 @@ const AddLabour = () => {
             </button>
             <button
               type="submit"
-              className="bg-[#0D7C66] hover:bg-[#0a6354] text-white px-4 sm:px-6 py-2.5 rounded-lg font-medium text-sm flex items-center gap-2 transition-colors shadow-sm"
+              disabled={loading}
+              className="bg-[#0D7C66] hover:bg-[#0a6354] text-white px-4 sm:px-6 py-2.5 rounded-lg font-medium text-sm flex items-center gap-2 transition-colors shadow-sm disabled:opacity-50"
             >
-              Register Labour
+              {loading ? 'Registering...' : 'Register Labour'}
             </button>
           </div>
         </form>

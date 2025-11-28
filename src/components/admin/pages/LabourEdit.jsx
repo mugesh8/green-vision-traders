@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Camera, Calendar, ArrowLeft } from 'lucide-react';
+import { getLabourById, updateLabour } from '../../../api/labourApi';
 
 const EditLabour = () => {
   const navigate = useNavigate();
@@ -22,6 +23,8 @@ const EditLabour = () => {
   });
 
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [profileImage, setProfileImage] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -31,9 +34,38 @@ const EditLabour = () => {
     }));
   };
 
+  useEffect(() => {
+    const fetchLabour = async () => {
+      try {
+        const response = await getLabourById(id);
+        const data = response.data;
+        setFormData({
+          fullName: data.full_name,
+          labourId: data.labour_id,
+          mobileNumber: data.mobile_number,
+          aadhaarNumber: data.aadhaar_number || '',
+          dateOfBirth: data.date_of_birth,
+          gender: data.gender,
+          bloodGroup: data.blood_group || '',
+          address: data.address,
+          department: data.department.toLowerCase(),
+          dailyWage: data.daily_wage,
+          joiningDate: data.joining_date
+        });
+        if (data.profile_image) {
+          setPhotoPreview(`http://localhost:8000${data.profile_image}`);
+        }
+      } catch (error) {
+        console.error('Error fetching labour:', error);
+      }
+    };
+    fetchLabour();
+  }, [id]);
+
   const handlePhotoUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setProfileImage(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setPhotoPreview(reader.result);
@@ -42,20 +74,41 @@ const EditLabour = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
-    // Add your form submission logic here
-    // After successful update, navigate back
-    navigate('/labours');
+    setLoading(true);
+    
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append('full_name', formData.fullName);
+      formDataToSend.append('mobile_number', formData.mobileNumber);
+      formDataToSend.append('aadhaar_number', formData.aadhaarNumber);
+      formDataToSend.append('date_of_birth', formData.dateOfBirth);
+      formDataToSend.append('gender', formData.gender);
+      formDataToSend.append('blood_group', formData.bloodGroup);
+      formDataToSend.append('address', formData.address);
+      formDataToSend.append('department', formData.department.charAt(0).toUpperCase() + formData.department.slice(1));
+      formDataToSend.append('daily_wage', formData.dailyWage);
+      formDataToSend.append('joining_date', formData.joiningDate);
+      
+      if (profileImage) formDataToSend.append('profile_image', profileImage);
+      
+      await updateLabour(id, formDataToSend);
+      navigate('/labour');
+    } catch (error) {
+      console.error('Error updating labour:', error);
+      alert(error.message || 'Failed to update labour. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancel = () => {
-    navigate('/labours');
+    navigate('/labour');
   };
 
   const handleBackClick = () => {
-    navigate('/labours');
+    navigate('/labour');
   };
 
   return (
@@ -362,9 +415,10 @@ const EditLabour = () => {
             </button>
             <button
               type="submit"
-              className="bg-[#0D7C66] hover:bg-[#0a6354] text-white px-4 sm:px-6 py-2.5 rounded-lg font-medium text-sm flex items-center gap-2 transition-colors shadow-sm"
+              disabled={loading}
+              className="bg-[#0D7C66] hover:bg-[#0a6354] text-white px-4 sm:px-6 py-2.5 rounded-lg font-medium text-sm flex items-center gap-2 transition-colors shadow-sm disabled:opacity-50"
             >
-              Save Labour
+              {loading ? 'Saving...' : 'Save Labour'}
             </button>
           </div>
         </form>

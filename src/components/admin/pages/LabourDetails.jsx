@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Phone, Mail, MapPin, TrendingUp, Package, ArrowLeft, User, Calendar, Clock } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { getLabourById } from '../../../api/labourApi';
 
 const LabourDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [labour, setLabour] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const handleBackClick = () => {
-    navigate('/labours');
+    navigate('/labour');
   };
 
   const labourData = {
@@ -99,10 +101,30 @@ const LabourDetails = () => {
   };
 
   useEffect(() => {
-    const fetchLabour = () => {
-      const labourInfo = labourData[id];
-      if (labourInfo) {
-        setLabour(labourInfo);
+    const fetchLabour = async () => {
+      try {
+        setLoading(true);
+        const response = await getLabourById(id);
+        const data = response.data;
+        setLabour({
+          id: data.labour_id,
+          name: data.full_name,
+          phone: data.mobile_number,
+          aadhaarNumber: data.aadhaar_number,
+          dateOfBirth: data.date_of_birth,
+          gender: data.gender,
+          bloodGroup: data.blood_group,
+          address: data.address,
+          department: data.department,
+          dailyWage: `₹${data.daily_wage}`,
+          joiningDate: data.joining_date,
+          status: data.status,
+          profileImage: data.profile_image
+        });
+      } catch (error) {
+        console.error('Error fetching labour:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -139,8 +161,19 @@ const LabourDetails = () => {
       <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
         <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
           {/* Avatar */}
-          <div className="w-24 h-24 bg-teal-700 rounded-full flex items-center justify-center flex-shrink-0">
-            <span className="text-white text-3xl font-bold">{labour?.name?.substring(0, 2).toUpperCase() || 'LB'}</span>
+          <div className="w-24 h-24 bg-teal-700 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+            {labour?.profileImage ? (
+              <img
+                src={`http://localhost:8000${labour.profileImage}`}
+                alt={labour.name}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
+              />
+            ) : null}
+            <span className={`text-white text-3xl font-bold ${labour?.profileImage ? 'hidden' : ''}`}>{labour?.name?.substring(0, 2).toUpperCase() || 'LB'}</span>
           </div>
           
           {/* Labour Info */}
