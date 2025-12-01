@@ -7,6 +7,18 @@ const DriverAirportDeliveryPage = () => {
   const [activeTab, setActiveTab] = useState('airport');
   const [statusFilter, setStatusFilter] = useState('All');
   const [dateFilter, setDateFilter] = useState('Today');
+  const [showStartModal, setShowStartModal] = useState(false);
+  const [showExpensesModal, setShowExpensesModal] = useState(false);
+  const [showEndKmModal, setShowEndKmModal] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [startKm, setStartKm] = useState('');
+  const [endKm, setEndKm] = useState('');
+  const [expenseData, setExpenseData] = useState({
+    fuelType: 'Petrol',
+    petrolBunkName: 'Indian Oil Petroleum',
+    unitPrice: '',
+    litre: ''
+  });
 
   const driverInfo = {
     name: 'Suresh Kumar',
@@ -26,10 +38,10 @@ const DriverAirportDeliveryPage = () => {
     }
   };
 
-  const orders = [
+  const [orders, setOrders] = useState([
     {
       id: 'APT-2024-A3421',
-      type: 'Airport Delivery',
+      type: 'Line Airport',
       pickup: { name: 'Warehouse A', location: 'Main Packing Center' },
       airport: { name: 'Chennai Airport', terminal: 'Terminal 2 - Cargo' },
       flightTime: '02:30 PM',
@@ -39,7 +51,7 @@ const DriverAirportDeliveryPage = () => {
     },
     {
       id: 'APT-2024-A3420',
-      type: 'Airport Delivery',
+      type: 'Line Airport',
       pickup: { name: 'Warehouse B', location: 'North Packing Center' },
       airport: { name: 'Chennai Airport', terminal: 'Terminal 2 - Cargo' },
       flightTime: '11:45 AM',
@@ -49,27 +61,27 @@ const DriverAirportDeliveryPage = () => {
     },
     {
       id: 'APT-2024-A3419',
-      type: 'Airport Delivery',
+      type: 'Line Airport',
       pickup: { name: 'Warehouse C', location: 'South Processing Unit' },
       airport: { name: 'Trichy Airport', terminal: 'Domestic Cargo' },
       flightTime: '04:15 PM',
       timeInfo: 'Scheduled',
-      status: 'Loading',
+      status: 'Collected',
       weight: '650 kg'
     },
     {
       id: 'APT-2024-A3418',
-      type: 'Airport Delivery',
+      type: 'Line Airport',
       pickup: { name: 'Warehouse A', location: 'Main Packing Center' },
       airport: { name: 'Coimbatore Airport', terminal: 'International Cargo' },
       flightTime: '08:30 AM',
       timeInfo: 'Departed 5 hrs ago',
-      status: 'Delivered',
+      status: 'Expenses',
       weight: '1100 kg'
     },
     {
       id: 'APT-2024-A3417',
-      type: 'Airport Delivery',
+      type: 'Line Airport',
       pickup: { name: 'Warehouse B', location: 'North Packing Center' },
       airport: { name: 'Chennai Airport', terminal: 'Terminal 2 - Cargo' },
       flightTime: '06:00 PM',
@@ -77,20 +89,129 @@ const DriverAirportDeliveryPage = () => {
       status: 'Assigned',
       weight: '780 kg'
     }
-  ];
+  ]);
 
   const getStatusColor = (status) => {
     switch (status) {
       case 'Delivered':
+      case 'Completed':
         return 'bg-emerald-100 text-emerald-700';
       case 'In Transit':
         return 'bg-blue-100 text-blue-700';
-      case 'Loading':
-        return 'bg-yellow-100 text-yellow-700';
+      case 'Collected':
+        return 'bg-purple-100 text-purple-700';
+      case 'Expenses':
+        return 'bg-orange-100 text-orange-700';
       case 'Assigned':
-        return 'bg-red-100 text-red-700';
+        return 'bg-yellow-100 text-yellow-700';
       default:
         return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  const handleStatusChange = (orderId, newStatus) => {
+    setOrders(orders.map(order => 
+      order.id === orderId ? { ...order, status: newStatus } : order
+    ));
+  };
+
+  const handleStartClick = (order) => {
+    setSelectedOrder(order);
+    setShowStartModal(true);
+  };
+
+  const handleStartSubmit = () => {
+    if (!startKm) return;
+    handleStatusChange(selectedOrder.id, 'In Transit');
+    setShowStartModal(false);
+    setStartKm('');
+    setSelectedOrder(null);
+  };
+
+  const handleExpensesClick = (order) => {
+    setSelectedOrder(order);
+    setShowExpensesModal(true);
+  };
+
+  const handleExpensesSubmit = () => {
+    if (!expenseData.petrolBunkName || !expenseData.unitPrice || !expenseData.litre) return;
+    handleStatusChange(selectedOrder.id, 'Expenses');
+    setShowExpensesModal(false);
+    setExpenseData({ fuelType: 'Petrol', petrolBunkName: '', unitPrice: '', litre: '' });
+    setSelectedOrder(null);
+  };
+
+  const handleEndKmClick = (order) => {
+    setSelectedOrder(order);
+    setShowEndKmModal(true);
+  };
+
+  const handleEndKmSubmit = () => {
+    if (!endKm) return;
+    handleStatusChange(selectedOrder.id, 'Completed');
+    setShowEndKmModal(false);
+    setEndKm('');
+    setSelectedOrder(null);
+  };
+
+  const calculateTotal = () => {
+    const total = (parseFloat(expenseData.unitPrice) || 0) * (parseFloat(expenseData.litre) || 0);
+    return total.toFixed(2);
+  };
+
+  const getActionButton = (order) => {
+    switch (order.status) {
+      case 'Assigned':
+        return (
+          <button
+            onClick={() => handleStartClick(order)}
+            className="px-4 py-2 bg-teal-600 text-white rounded-lg text-xs font-medium hover:bg-teal-700 transition-colors"
+          >
+            Start
+          </button>
+        );
+      case 'In Transit':
+        return (
+          <button
+            onClick={() => handleStatusChange(order.id, 'Collected')}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors"
+          >
+            Mark Collected
+          </button>
+        );
+      case 'Collected':
+        return (
+          <button
+            onClick={() => handleStatusChange(order.id, 'Delivered')}
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg text-xs font-medium hover:bg-purple-700 transition-colors"
+          >
+            Mark Delivered
+          </button>
+        );
+      case 'Delivered':
+        return (
+          <button
+            onClick={() => handleExpensesClick(order)}
+            className="px-4 py-2 bg-orange-600 text-white rounded-lg text-xs font-medium hover:bg-orange-700 transition-colors"
+          >
+            Expenses
+          </button>
+        );
+      case 'Expenses':
+        return (
+          <button
+            onClick={() => handleEndKmClick(order)}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700 transition-colors"
+          >
+            Complete
+          </button>
+        );
+      case 'Completed':
+        return (
+          <span className="text-xs text-gray-500 font-medium">Completed</span>
+        );
+      default:
+        return null;
     }
   };
 
@@ -181,7 +302,7 @@ const DriverAirportDeliveryPage = () => {
               onClick={() => navigate('/drivers/DRV-002')}
               className="px-5 py-2.5 rounded-lg font-medium transition-all text-sm bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
             >
-              Collection Orders
+              Local Pickups
             </button>
             <button
               onClick={() => setActiveTab('airport')}
@@ -191,7 +312,7 @@ const DriverAirportDeliveryPage = () => {
                   : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
               }`}
             >
-              Airport Delivery
+              Line Airport
             </button>
           </div>
 
@@ -248,6 +369,7 @@ const DriverAirportDeliveryPage = () => {
                   <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Flight Time</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Status</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Weight</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -283,6 +405,9 @@ const DriverAirportDeliveryPage = () => {
                     <td className="px-6 py-4">
                       <div className="font-semibold text-[#0D5C4D] text-sm">{order.weight}</div>
                     </td>
+                    <td className="px-6 py-4">
+                      {getActionButton(order)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -300,6 +425,169 @@ const DriverAirportDeliveryPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Start Kilometer Modal */}
+      {showStartModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+          <div className="bg-white rounded-lg p-6 w-96">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Start Journey</h3>
+            <div className="mb-4">
+              <label className="block text-sm text-gray-700 mb-2">Start Kilometer</label>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  value={startKm}
+                  onChange={(e) => setStartKm(e.target.value)}
+                  placeholder="Enter kilometer"
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+                <span className="px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-700">km</span>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowStartModal(false);
+                  setStartKm('');
+                  setSelectedOrder(null);
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleStartSubmit}
+                disabled={!startKm}
+                className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* End Kilometer Modal */}
+      {showEndKmModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+          <div className="bg-white rounded-lg p-6 w-96">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">End Journey</h3>
+            <div className="mb-4">
+              <label className="block text-sm text-gray-700 mb-2">End Kilometer</label>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  value={endKm}
+                  onChange={(e) => setEndKm(e.target.value)}
+                  placeholder="Enter kilometer"
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+                <span className="px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-700">km</span>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowEndKmModal(false);
+                  setEndKm('');
+                  setSelectedOrder(null);
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleEndKmSubmit}
+                disabled={!endKm}
+                className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Expenses Modal */}
+      {showExpensesModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+          <div className="bg-white rounded-lg p-6 w-96">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Add Expenses</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-gray-700 mb-2">Fuel Type</label>
+                <select
+                  value={expenseData.fuelType}
+                  onChange={(e) => setExpenseData({ ...expenseData, fuelType: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                >
+                  <option value="Petrol">Petrol</option>
+                  <option value="Diesel">Diesel</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-700 mb-2">Petrol Bunk Name</label>
+                <select
+                  value={expenseData.petrolBunkName}
+                  onChange={(e) => setExpenseData({ ...expenseData, petrolBunkName: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                >
+                  <option value="Indian Oil Petroleum">Indian Oil Petroleum</option>
+                  <option value="Bharat Petroleum">Bharat Petroleum</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-700 mb-2">Unit Price</label>
+                <input
+                  type="number"
+                  value={expenseData.unitPrice}
+                  onChange={(e) => setExpenseData({ ...expenseData, unitPrice: e.target.value })}
+                  placeholder="Enter unit price"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-700 mb-2">Litre</label>
+                <input
+                  type="number"
+                  value={expenseData.litre}
+                  onChange={(e) => setExpenseData({ ...expenseData, litre: e.target.value })}
+                  placeholder="Enter litres"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-700 mb-2">Total Amount</label>
+                <input
+                  type="text"
+                  value={calculateTotal()}
+                  readOnly
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end mt-6">
+              <button
+                onClick={() => {
+                  setShowExpensesModal(false);
+                  setExpenseData({ fuelType: 'Petrol', petrolBunkName: 'Indian Oil Petroleum', unitPrice: '', litre: '' });
+                  setSelectedOrder(null);
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleExpensesSubmit}
+                disabled={!expenseData.petrolBunkName || !expenseData.unitPrice || !expenseData.litre}
+                className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

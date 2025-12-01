@@ -97,7 +97,7 @@ const DriverManagement = () => {
           initial: 'RP',
           color: 'bg-teal-700',
           vehicle: { name: 'Tata Ace', number: 'TN 01 AB 1234', capacity: '1 Ton' },
-          deliveryType: 'Collection',
+          deliveryType: 'Local Pickup',
           status: 'Available',
           workingHours: '8.5 hrs'
         },
@@ -108,7 +108,7 @@ const DriverManagement = () => {
           initial: 'SK',
           color: 'bg-teal-700',
           vehicle: { name: 'Mahindra Bolero', number: 'TN 02 CD 9876', capacity: '1.5 Ton' },
-          deliveryType: 'Airport Delivery',
+          deliveryType: 'Line Airport',
           status: 'On Trip',
           workingHours: '6.0 hrs'
         }
@@ -181,9 +181,9 @@ const DriverManagement = () => {
 
   const getDeliveryTypeColor = (type) => {
     switch (type) {
-      case 'Collection':
+      case 'Local Pickup':
         return 'bg-blue-100 text-blue-700';
-      case 'Airport Delivery':
+      case 'Line Airport':
         return 'bg-orange-100 text-orange-700';
       default:
         return 'bg-gray-100 text-gray-700';
@@ -205,13 +205,13 @@ const DriverManagement = () => {
             onClick={() => navigate('/drivers/DRV-001')}
             className="px-5 py-2.5 rounded-lg font-medium transition-all text-sm bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
           >
-            Collection Drivers
+            Local Pickup Drivers
           </button>
           <button
             onClick={() => navigate('/drivers/DRV-001/airport')}
             className="px-5 py-2.5 rounded-lg font-medium transition-all text-sm bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
           >
-            Airport Delivery
+            Line Airport
           </button>
         </div>
 
@@ -300,10 +300,10 @@ const DriverManagement = () => {
                 <thead>
                   <tr className="bg-[#D4F4E8]">
                     <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Driver Info</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Contact Number</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Vehicle Details</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Delivery Type</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Status</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Working Hours</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Action</th>
                   </tr>
                 </thead>
@@ -317,9 +317,12 @@ const DriverManagement = () => {
                           </div>
                           <div>
                             <div className="font-semibold text-[#0D5C4D]">{driver.name}</div>
-                            <div className="text-xs text-[#6B8782]">{driver.id} • {driver.phone}</div>
+                            {/* <div className="text-xs text-[#6B8782]">{driver.id}</div> */}
                           </div>
                         </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-[#0D5C4D]">{driver.phone}</div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm text-[#0D5C4D]">{driver.vehicle.name}</div>
@@ -335,9 +338,6 @@ const DriverManagement = () => {
                           <div className={`w-2 h-2 rounded-full ${getStatusDot(driver.status)}`}></div>
                           {driver.status}
                         </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-semibold text-[#0D5C4D]">{driver.workingHours}</div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="relative dropdown-container">

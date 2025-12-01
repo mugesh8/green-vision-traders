@@ -17,19 +17,29 @@ const EditDriver = () => {
     pin_code: '',
     password: '',
     license_number: '',
+    vehicle_ownership: '',
+    available_vehicle: '',
     vehicle_type: '',
     vehicle_number: '',
     capacity: '',
     insurance_number: '',
     insurance_expiry_date: '',
     vehicle_condition: 'Good',
-    delivery_type: 'Collection Delivery',
+    delivery_type: 'Local Pickups',
     status: 'Available'
   });
   
   const [showPassword, setShowPassword] = useState(false);
+  const [profileImage, setProfileImage] = useState(null);
   const [driverImage, setDriverImage] = useState(null);
   const [driverIdProof, setDriverIdProof] = useState(null);
+  const [vehicleTypes] = useState([
+    'tata-ace',
+    'mahindra-bolero', 
+    'ashok-leyland',
+    'eicher-pro',
+    'tata-407'
+  ]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -70,13 +80,15 @@ const EditDriver = () => {
           pin_code: driver.pin_code || driver.pincode || '',
           password: '', // Don't populate password field for security reasons
           license_number: driver.license_number || driver.license || '',
+          vehicle_ownership: driver.vehicle_ownership || '',
+          available_vehicle: driver.available_vehicle || driver.vehicle_type || driver.vehicleType || '',
           vehicle_type: driver.vehicle_type || driver.vehicleType || '',
           vehicle_number: driver.vehicle_number || driver.vehicleNumber || '',
           capacity: driver.capacity || '',
           insurance_number: driver.insurance_number || driver.insuranceNumber || '',
           insurance_expiry_date: driver.insurance_expiry_date || driver.insuranceExpiryDate || '',
           vehicle_condition: driver.vehicle_condition || driver.vehicleCondition || 'Good',
-          delivery_type: driver.delivery_type || driver.deliveryType || 'Collection Delivery',
+          delivery_type: driver.delivery_type || driver.deliveryType || 'Local Pickups',
           status: driver.status || 'Available'
         });
       } catch (error) {
@@ -110,7 +122,9 @@ const EditDriver = () => {
   const handleFileUpload = (type, event) => {
     const file = event.target.files[0];
     if (file) {
-      if (type === 'driver_image') {
+      if (type === 'profile') {
+        setProfileImage(file);
+      } else if (type === 'driver_image') {
         setDriverImage(file);
       } else {
         setDriverIdProof(file);
@@ -130,6 +144,7 @@ const EditDriver = () => {
         }
       });
       
+      if (profileImage) formDataToSend.append('profile_image', profileImage);
       if (driverImage) formDataToSend.append('driver_image', driverImage);
       if (driverIdProof) formDataToSend.append('driver_id_proof', driverIdProof);
       
@@ -398,20 +413,50 @@ const EditDriver = () => {
               <h2 className="text-xl font-bold text-gray-900 mb-6">Vehicle Information</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                {/* Vehicle Type */}
+                {/* Vehicle Ownership */}
                 <div>
                   <label className="block text-sm text-gray-700 mb-2">
                     Vehicle Type <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
-                    name="vehicle_type"
-                    value={formData.vehicle_type}
-                    onChange={handleInputChange}
-                    placeholder="Enter vehicle type"
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
-                    required
-                  />
+                  <div className="relative">
+                    <select
+                      name="vehicle_ownership"
+                      value={formData.vehicle_ownership}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent appearance-none text-sm cursor-pointer"
+                      required
+                    >
+                      <option value="">Select vehicle type</option>
+                      <option value="r1">R1 Vehicle</option>
+                      <option value="rental">Rental Vehicle</option>
+                      <option value="third-party">Third Party Vehicle</option>
+                    </select>
+                    <ChevronRight className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none rotate-90" />
+                  </div>
+                </div>
+
+                {/* Available Vehicle */}
+                <div>
+                  <label className="block text-sm text-gray-700 mb-2">
+                    Available Vehicle <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <select
+                      name="available_vehicle"
+                      value={formData.available_vehicle}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent appearance-none text-sm cursor-pointer"
+                      required
+                    >
+                      <option value="">Select available vehicle</option>
+                      {vehicleTypes.map(type => (
+                        <option key={type} value={type}>
+                          {type.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronRight className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none rotate-90" />
+                  </div>
                 </div>
 
                 {/* Vehicle Number */}
@@ -495,44 +540,44 @@ const EditDriver = () => {
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Collection Delivery */}
+                {/* Local Pickups */}
                 <label className={`relative flex items-start p-4 border-2 rounded-xl cursor-pointer transition-all ${
-                  formData.delivery_type === 'Collection Delivery' 
+                  formData.delivery_type === 'Local Pickups' 
                     ? 'border-teal-600 bg-teal-50' 
                     : 'border-gray-300 hover:border-gray-400'
                 }`}>
                   <input
                     type="radio"
                     name="delivery_type"
-                    value="Collection Delivery"
-                    checked={formData.delivery_type === 'Collection Delivery'}
+                    value="Local Pickups"
+                    checked={formData.delivery_type === 'Local Pickups'}
                     onChange={handleInputChange}
                     className="mt-1 w-5 h-5 text-teal-600 focus:ring-2 focus:ring-teal-500"
                   />
                   <div className="ml-3">
-                    <div className="font-semibold text-gray-900">Collection Delivery</div>
+                    <div className="font-semibold text-gray-900">Local Pickups</div>
                     <div className="text-sm text-gray-600 mt-1">
                       Collect vegetables from farmers, suppliers and deliver to packing centers
                     </div>
                   </div>
                 </label>
 
-                {/* Airport Delivery */}
+                {/* Line Airport */}
                 <label className={`relative flex items-start p-4 border-2 rounded-xl cursor-pointer transition-all ${
-                  formData.delivery_type === 'Airport Delivery' 
+                  formData.delivery_type === 'Line Airport' 
                     ? 'border-teal-600 bg-teal-50' 
                     : 'border-gray-300 hover:border-gray-400'
                 }`}>
                   <input
                     type="radio"
                     name="delivery_type"
-                    value="Airport Delivery"
-                    checked={formData.delivery_type === 'Airport Delivery'}
+                    value="Line Airport"
+                    checked={formData.delivery_type === 'Line Airport'}
                     onChange={handleInputChange}
                     className="mt-1 w-5 h-5 text-teal-600 focus:ring-2 focus:ring-teal-500"
                   />
                   <div className="ml-3">
-                    <div className="font-semibold text-gray-900">Airport Delivery</div>
+                    <div className="font-semibold text-gray-900">Line Airport</div>
                     <div className="text-sm text-gray-600 mt-1">
                       Pick up from packing centers and deliver to airports for shipment
                     </div>
@@ -556,7 +601,7 @@ const EditDriver = () => {
                   <div className="ml-3">
                     <div className="font-semibold text-gray-900">Both Types</div>
                     <div className="text-sm text-gray-600 mt-1">
-                      Handle both collection and airport deliveries as needed
+                      Handle both local pickups and line airport deliveries as needed
                     </div>
                   </div>
                 </label>
@@ -567,11 +612,49 @@ const EditDriver = () => {
             <div className="mb-8">
               <h2 className="text-xl font-bold text-gray-900 mb-6">Document Uploads</h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Upload Profile Image */}
+                <div>
+                  <label className="block text-sm text-gray-700 mb-2">
+                    Upload Profile Image
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <div className="relative">
+                      <input
+                        type="file"
+                        id="profileUpload"
+                        onChange={(e) => handleFileUpload('profile', e)}
+                        accept=".jpg,.jpeg,.png,.gif"
+                        className="hidden"
+                      />
+                      <label
+                        htmlFor="profileUpload"
+                        className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors"
+                      >
+                        <Upload className="w-6 h-6 text-gray-600" />
+                      </label>
+                    </div>
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => document.getElementById('profileUpload').click()}
+                        className="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        Upload Image
+                      </button>
+                      {profileImage && (
+                        <p className="text-xs text-green-600 mt-2 font-medium">
+                          ✓ {profileImage.name}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 {/* Upload Driver Image */}
                 <div>
                   <label className="block text-sm text-gray-700 mb-2">
-                    Upload Driver Image
+                    Upload Driver Licence
                   </label>
                   <div className="flex items-center gap-4">
                     <div className="relative">

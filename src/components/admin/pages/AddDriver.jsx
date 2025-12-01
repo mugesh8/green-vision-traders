@@ -15,6 +15,7 @@ const AddDriver = () => {
     pinCode: '',
     password: '',
     licenseNumber: '',
+    availableVehicle: '',
     vehicleType: '',
     vehicleNumber: '',
     capacity: '',
@@ -26,6 +27,7 @@ const AddDriver = () => {
   });
 
   const [showPassword, setShowPassword] = useState(false);
+  const [profileImage, setProfileImage] = useState(null);
   const [licenseImage, setLicenseImage] = useState(null);
   const [idProof, setIdProof] = useState(null);
   const [vehicleTypes, setVehicleTypes] = useState([
@@ -41,12 +43,12 @@ const AddDriver = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    if (name === 'vehicleType' && value === 'add-new') {
+    if (name === 'availableVehicle' && value === 'add-new') {
       setShowNewVehicleInput(true);
       setFormData(prev => ({ ...prev, [name]: '' }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
-      if (name === 'vehicleType') {
+      if (name === 'availableVehicle') {
         setShowNewVehicleInput(false);
       }
     }
@@ -56,7 +58,7 @@ const AddDriver = () => {
     if (newVehicleType.trim()) {
       const newType = newVehicleType.trim().toLowerCase().replace(/\s+/g, '-');
       setVehicleTypes(prev => [...prev, newType]);
-      setFormData(prev => ({ ...prev, vehicleType: newType }));
+      setFormData(prev => ({ ...prev, availableVehicle: newType }));
       setShowNewVehicleInput(false);
       setNewVehicleType('');
     }
@@ -65,7 +67,9 @@ const AddDriver = () => {
   const handleFileUpload = (type, event) => {
     const file = event.target.files[0];
     if (file) {
-      if (type === 'license') {
+      if (type === 'profile') {
+        setProfileImage(file);
+      } else if (type === 'license') {
         setLicenseImage(file);
       } else {
         setIdProof(file);
@@ -89,16 +93,18 @@ const AddDriver = () => {
       formDataToSend.append('pin_code', formData.pinCode);
       formDataToSend.append('password', formData.password);
       formDataToSend.append('license_number', formData.licenseNumber);
-      formDataToSend.append('vehicle_type', formData.vehicleType);
+      formDataToSend.append('vehicle_type', formData.availableVehicle);
+      formDataToSend.append('vehicle_ownership', formData.vehicleType);
       formDataToSend.append('vehicle_number', formData.vehicleNumber);
       formDataToSend.append('capacity', formData.capacity);
       formDataToSend.append('insurance_number', formData.insuranceNumber);
       formDataToSend.append('insurance_expiry_date', formData.insuranceExpiry);
       formDataToSend.append('vehicle_condition', formData.vehicleCondition);
-      formDataToSend.append('delivery_type', formData.deliveryType === 'collection' ? 'Collection Delivery' : 
-                           formData.deliveryType === 'airport' ? 'Airport Delivery' : 'Both Types');
+      formDataToSend.append('delivery_type', formData.deliveryType === 'collection' ? 'Local Pickups' : 
+                           formData.deliveryType === 'airport' ? 'Line Airport' : 'Both Types');
       formDataToSend.append('status', formData.isActive ? 'Available' : 'Inactive');
       
+      if (profileImage) formDataToSend.append('profile_image', profileImage);
       if (licenseImage) formDataToSend.append('driver_image', licenseImage);
       if (idProof) formDataToSend.append('driver_id_proof', idProof);
       
@@ -286,7 +292,49 @@ const AddDriver = () => {
             </div>
 
             {/* File Uploads */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Upload Profile Image */}
+              <div>
+                <label className="block text-sm text-gray-700 mb-2">
+                  Upload Profile Image
+                </label>
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <input
+                      type="file"
+                      id="profileUpload"
+                      onChange={(e) => handleFileUpload('profile', e)}
+                      accept=".jpg,.jpeg,.png,.gif"
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="profileUpload"
+                      className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors"
+                    >
+                      <Upload className="w-6 h-6 text-gray-600" />
+                    </label>
+                  </div>
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('profileUpload').click()}
+                      className="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      Upload Image
+                    </button>
+                    {profileImage ? (
+                      <p className="text-xs text-green-600 mt-2 font-medium">
+                        ✓ {profileImage.name}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-gray-500 mt-2">
+                        Upload profile image: JPG, PNG or GIF. Max 2MB.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               {/* Upload License Image */}
               <div>
                 <label className="block text-sm text-gray-700 mb-2">
@@ -383,22 +431,44 @@ const AddDriver = () => {
                 <label className="block text-sm text-gray-700 mb-2">
                   Vehicle Type <span className="text-red-500">*</span>
                 </label>
+                <div className="relative">
+                  <select
+                    name="vehicleType"
+                    value={formData.vehicleType}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent appearance-none text-sm cursor-pointer"
+                    required
+                  >
+                    <option value="">Select vehicle type</option>
+                    <option value="r1">R1 Vehicle</option>
+                    <option value="rental">Rental Vehicle</option>
+                    <option value="third-party">Third Party Vehicle</option>
+                  </select>
+                  <ChevronRight className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none rotate-90" />
+                </div>
+              </div>
+
+              {/* Available Vehicle */}
+              <div>
+                <label className="block text-sm text-gray-700 mb-2">
+                  Available Vehicle <span className="text-red-500">*</span>
+                </label>
                 {!showNewVehicleInput ? (
                   <div className="relative">
                     <select
-                      name="vehicleType"
-                      value={formData.vehicleType}
+                      name="availableVehicle"
+                      value={formData.availableVehicle}
                       onChange={handleInputChange}
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent appearance-none text-sm text-gray-500 cursor-pointer"
                       required
                     >
-                      <option value="">Select vehicle type</option>
+                      <option value="">Select available vehicle</option>
                       {vehicleTypes.map(type => (
                         <option key={type} value={type}>
                           {type.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
                         </option>
                       ))}
-                      <option value="add-new">+ Add New Vehicle Type</option>
+                      <option value="add-new">+ Add New Vehicle</option>
                     </select>
                     <ChevronRight className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none rotate-90" />
                   </div>
@@ -408,7 +478,7 @@ const AddDriver = () => {
                       type="text"
                       value={newVehicleType}
                       onChange={(e) => setNewVehicleType(e.target.value)}
-                      placeholder="Enter new vehicle type"
+                      placeholder="Enter new vehicle"
                       className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
                       onKeyPress={(e) => e.key === 'Enter' && handleAddNewVehicleType()}
                     />
@@ -545,7 +615,7 @@ const AddDriver = () => {
                   className="mt-1 w-5 h-5 text-teal-600 focus:ring-2 focus:ring-teal-500"
                 />
                 <div className="ml-3">
-                  <div className="font-semibold text-gray-900">Collection Delivery</div>
+                  <div className="font-semibold text-gray-900">Local Pickups</div>
                   <div className="text-sm text-gray-600 mt-1">
                     Collect vegetables from farmers, suppliers and deliver to packing centers
                   </div>
@@ -567,7 +637,7 @@ const AddDriver = () => {
                   className="mt-1 w-5 h-5 text-teal-600 focus:ring-2 focus:ring-teal-500"
                 />
                 <div className="ml-3">
-                  <div className="font-semibold text-gray-900">Airport Delivery</div>
+                  <div className="font-semibold text-gray-900">Line Airport</div>
                   <div className="text-sm text-gray-600 mt-1">
                     Pick up from packing centers and deliver to airports for shipment
                   </div>
@@ -591,7 +661,7 @@ const AddDriver = () => {
                 <div className="ml-3">
                   <div className="font-semibold text-gray-900">Both Types</div>
                   <div className="text-sm text-gray-600 mt-1">
-                    Handle both collection and airport deliveries as needed
+                    Handle both local pickups and line airport deliveries as needed
                   </div>
                 </div>
               </label>

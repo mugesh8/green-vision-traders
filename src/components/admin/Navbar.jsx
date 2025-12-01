@@ -27,7 +27,7 @@ const Navbar = ({ onMenuClick }) => {
     if (path === '/drivers/add') return 'Add Driver';
     if (path.match(/^\/drivers\/[^/]+\/edit$/)) return 'Edit Driver';
     if (path.match(/^\/drivers\/[^/]+$/)) return 'Driver Details';
-    if (path.match(/^\/drivers\/[^/]+\/airport$/)) return 'Driver Airport Delivery';
+    if (path.match(/^\/drivers\/[^/]+\/airport$/)) return 'Driver Line Airport';
     if (path === '/suppliers') return 'Supplier Management';
     if (path === '/suppliers/add') return 'Add Supplier';
     if (path.match(/^\/suppliers\/[^/]+\/edit$/)) return 'Edit Supplier';
@@ -77,8 +77,8 @@ const Navbar = ({ onMenuClick }) => {
       icon: AlertCircle,
       iconBg: 'bg-red-100',
       iconColor: 'text-red-600',
-      title: 'Urgent: 3 orders pending collection',
-      description: 'Collection deadline in 2 hours',
+      title: 'Urgent: 3 orders pending local pickup',
+      description: 'Local pickup deadline in 2 hours',
       time: '5 minutes ago',
       unread: true,
     },

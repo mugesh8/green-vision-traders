@@ -8,7 +8,7 @@ const OrderAssignCreateStage1 = () => {
   const { id } = useParams();
   const orderData = location.state?.orderData;
   const [selectedType, setSelectedType] = useState('Box');
-  const [deliveryType, setDeliveryType] = useState('Collection Delivery');
+  const [deliveryType, setDeliveryType] = useState('Local Pickups');
 
   const productRows = [
     {
@@ -93,7 +93,7 @@ const OrderAssignCreateStage1 = () => {
       distance: '45 km',
       driver: 'Select Driver',
       pickupDate: 'dd/mm/yyyy',
-      deliveryType: 'Collection Delivery',
+      deliveryType: 'Local Pickups',
       isAssigned: false,
     },
     {
@@ -103,7 +103,7 @@ const OrderAssignCreateStage1 = () => {
       distance: '15 km',
       driver: 'Rajesh - DRV-205',
       pickupDate: '12/12/2024',
-      deliveryType: 'Airport Delivery',
+      deliveryType: 'Line Airport',
       isAssigned: true,
     },
     {
@@ -113,7 +113,7 @@ const OrderAssignCreateStage1 = () => {
       distance: '28 km',
       driver: 'Arun - DRV-318',
       pickupDate: '12/12/2024',
-      deliveryType: 'Collection Delivery',
+      deliveryType: 'Local Pickups',
       isAssigned: true,
     },
   ];
@@ -402,8 +402,8 @@ const OrderAssignCreateStage1 = () => {
                   <td className="px-4 py-4">
                     <div className="relative">
                       <select className="appearance-none w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none">
-                        <option value="Collection Delivery" selected={route.deliveryType === 'Collection Delivery'}>Collection Delivery</option>
-                        <option value="Airport Delivery" selected={route.deliveryType === 'Airport Delivery'}>Airport Delivery</option>
+                        <option value="Local Pickups" selected={route.deliveryType === 'Local Pickups'}>Local Pickups</option>
+                        <option value="Line Airport" selected={route.deliveryType === 'Line Airport'}>Line Airport</option>
                       </select>
                       <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-gray-500 pointer-events-none" />
                     </div>
@@ -457,8 +457,8 @@ const OrderAssignCreateStage1 = () => {
                   <label className="text-xs text-gray-500 block mb-1">Delivery Type</label>
                   <div className="relative">
                     <select className="appearance-none w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg text-sm">
-                      <option value="Collection Delivery" selected={route.deliveryType === 'Collection Delivery'}>Collection Delivery</option>
-                      <option value="Airport Delivery" selected={route.deliveryType === 'Airport Delivery'}>Airport Delivery</option>
+                      <option value="Local Pickups" selected={route.deliveryType === 'Local Pickups'}>Local Pickups</option>
+                      <option value="Line Airport" selected={route.deliveryType === 'Line Airport'}>Line Airport</option>
                     </select>
                     <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-gray-500 pointer-events-none" />
                   </div>
