@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
-import { Check, ChevronDown, Edit2, X, AlertCircle } from 'lucide-react';
+import { Check, ChevronDown } from 'lucide-react';
+import { updateStage2Assignment, getOrderAssignment } from '../../../api/orderAssignmentApi';
+import { getAllLabours } from '../../../api/labourApi';
 
 const OrderAssignCreateStage2 = () => {
   const navigate = useNavigate();
@@ -8,7 +10,73 @@ const OrderAssignCreateStage2 = () => {
   const { id } = useParams();
   const orderData = location.state?.orderData;
   const [packagingStatus, setPackagingStatus] = useState('Quality Check Completed');
-  const [packagingDate, setPackagingDate] = useState('14/12/2024');
+  const [netWeight, setNetWeight] = useState('400 kg');
+  const [grossWeight, setGrossWeight] = useState('470 kg');
+  const [packageCount, setPackageCount] = useState('15 Packages');
+  const [selectedLabour, setSelectedLabour] = useState('');
+  const [specialInstructions, setSpecialInstructions] = useState('Temperature control required. Maintain 2-4°C during transport...');
+  const [labours, setLabours] = useState([]);
+
+  // Load labours and existing assignment data
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Load active labours only
+        const labourResponse = await getAllLabours(1, 1000);
+        const activeLabours = (labourResponse.data || []).filter(labour => labour.status === 'Active');
+        setLabours(activeLabours);
+        
+        // Load existing assignment data if available
+        const assignmentResponse = await getOrderAssignment(id);
+        const assignmentData = assignmentResponse.data;
+        
+        if (assignmentData.packaging_status) {
+          setPackagingStatus(assignmentData.packaging_status);
+        }
+        if (assignmentData.net_weight) {
+          setNetWeight(assignmentData.net_weight);
+        }
+        if (assignmentData.gross_weight) {
+          setGrossWeight(assignmentData.gross_weight);
+        }
+        if (assignmentData.package_count) {
+          setPackageCount(assignmentData.package_count);
+        }
+        if (assignmentData.labour_id) {
+          setSelectedLabour(assignmentData.labour_id);
+        }
+        if (assignmentData.special_instructions) {
+          setSpecialInstructions(assignmentData.special_instructions);
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+      }
+    };
+    
+    loadData();
+  }, [id]);
+
+  const handleConfirmAndDispatch = async () => {
+    try {
+      const stage2Data = {
+        packagingStatus,
+        netWeight,
+        grossWeight,
+        packageCount,
+        labourId: selectedLabour,
+        specialInstructions
+      };
+      
+      const response = await updateStage2Assignment(id, stage2Data);
+      console.log('Stage 2 saved:', response);
+      
+      // Navigate to Stage 3
+      navigate(`/order-assign/stage3/${id}`, { state: { orderData, stage2Data } });
+    } catch (error) {
+      console.error('Error saving stage 2:', error);
+      alert('Failed to save stage 2 assignment. Please try again.');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
@@ -16,27 +84,27 @@ const OrderAssignCreateStage2 = () => {
       {/* Order Information Card */}
       <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Information</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <p className="text-xs text-gray-500 mb-1">Order ID</p>
             <p className="text-sm font-semibold text-gray-900">{orderData?.id || id}</p>
           </div>
           <div>
             <p className="text-xs text-gray-500 mb-1">Customer Name</p>
-            <p className="text-sm font-medium text-gray-900">{orderData?.customer?.name || 'N/A'}</p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-500 mb-1">Needed By Date</p>
-            <p className="text-sm font-medium text-gray-900">15/12/2024</p>
+            <p className="text-sm font-medium text-gray-900">{orderData?.customer_name || 'N/A'}</p>
           </div>
           <div>
             <p className="text-xs text-gray-500 mb-1">Total Products</p>
-            <p className="text-sm font-medium text-gray-900">{orderData?.products?.length || 0} Items</p>
+            <p className="text-sm font-medium text-gray-900">{orderData?.items?.length || 0} Items</p>
           </div>
           <div>
             <p className="text-xs text-gray-500 mb-1">Status</p>
-            <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
-              Packed
+           <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${orderData?.order_status === 'pending' ? 'bg-purple-100 text-purple-700' :
+              orderData?.order_status === 'processing' ? 'bg-yellow-100 text-yellow-700' :
+                orderData?.order_status === 'delivered' ? 'bg-emerald-600 text-white' :
+                  'bg-gray-100 text-gray-700'
+              }`}>
+              {orderData?.order_status ? orderData.order_status.charAt(0).toUpperCase() + orderData.order_status.slice(1) : 'N/A'}
             </span>
           </div>
         </div>
@@ -44,19 +112,22 @@ const OrderAssignCreateStage2 = () => {
 
       {/* Stage Tabs */}
       <div className="mb-6 flex flex-col sm:flex-row gap-3">
-        <button className="px-6 py-3 bg-white border-2 border-emerald-600 text-emerald-700 rounded-lg font-medium hover:bg-emerald-50 transition-colors flex items-center gap-2">
+        <button 
+          onClick={() => navigate(`/order-assign/stage1/${id}`, { state: { orderData } })}
+          className="px-6 py-3 bg-white border-2 border-emerald-600 text-emerald-700 rounded-lg font-medium hover:bg-emerald-50 transition-colors flex items-center gap-2"
+        >
           <Check className="w-5 h-5" />
           Stage 1: Collected
         </button>
         <button className="px-6 py-3 bg-emerald-600 text-white rounded-lg font-medium shadow-sm hover:bg-emerald-700 transition-colors">
-          Stage 2: Packaging to Airport
+          Stage 2: Packaging
         </button>
       </div>
 
       {/* Stage 2 Section */}
       <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">Stage 2: Transport from Packaging to Airport</h2>
-        <p className="text-sm text-gray-600 mb-6">Manage final delivery from packaging location to airport for export shipment</p>
+        <h2 className="text-lg font-semibold text-gray-900 mb-2">Stage 2: Packaging & Quality Check</h2>
+        <p className="text-sm text-gray-600 mb-6">Manage packaging and quality check process</p>
 
         {/* Stage 1 Completion Status */}
         <div className="bg-emerald-50 border-l-4 border-emerald-600 p-4 mb-6">
@@ -65,14 +136,10 @@ const OrderAssignCreateStage2 = () => {
             <Check className="w-4 h-4 text-emerald-700 mt-0.5 flex-shrink-0" />
             <p className="text-sm text-emerald-800">All products collected and delivered to packaging location</p>
           </div>
-          <div className="flex items-start gap-2 mt-2">
-            <Check className="w-4 h-4 text-emerald-700 mt-0.5 flex-shrink-0" />
-            <p className="text-sm text-emerald-800">Received at: Central Packaging Warehouse - 13/12/2024, 10:30 AM</p>
-          </div>
         </div>
 
         {/* Packaging & Quality Check */}
-        <h3 className="text-base font-semibold text-gray-900 mb-4">Packaging & Quality Check</h3>
+        <h3 className="text-base font-semibold text-gray-900 mb-4">Packaging Details</h3>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           <div>
@@ -92,35 +159,28 @@ const OrderAssignCreateStage2 = () => {
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-2 block">Packaging Date</label>
+            <label className="text-sm font-medium text-gray-700 mb-2 block">Labour Name</label>
             <div className="relative">
               <select
-                value={packagingDate}
-                onChange={(e) => setPackagingDate(e.target.value)}
+                value={selectedLabour}
+                onChange={(e) => setSelectedLabour(e.target.value)}
                 className="w-full appearance-none px-4 py-2.5 pr-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none bg-white"
               >
-                <option>14/12/2024</option>
-                <option>15/12/2024</option>
-                <option>16/12/2024</option>
+                <option value="">Select Labour</option>
+                {labours.map(labour => (
+                  <option key={labour.lid} value={labour.lid}>{labour.full_name}</option>
+                ))}
               </select>
               <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-600 pointer-events-none" />
             </div>
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-2 block">Ready for Dispatch</label>
-            <input
-              type="text"
-              value="14/12/2024, 2:00 PM"
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
-            />
-          </div>
-
-          <div>
             <label className="text-sm font-medium text-gray-700 mb-2 block">Net Weight</label>
             <input
               type="text"
-              value="400 kg"
+              value={netWeight}
+              onChange={(e) => setNetWeight(e.target.value)}
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
             />
           </div>
@@ -129,7 +189,8 @@ const OrderAssignCreateStage2 = () => {
             <label className="text-sm font-medium text-gray-700 mb-2 block">Gross Weight</label>
             <input
               type="text"
-              value="470 kg"
+              value={grossWeight}
+              onChange={(e) => setGrossWeight(e.target.value)}
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
             />
           </div>
@@ -138,123 +199,24 @@ const OrderAssignCreateStage2 = () => {
             <label className="text-sm font-medium text-gray-700 mb-2 block">Package Count</label>
             <input
               type="text"
-              value="15 Packages"
+              value={packageCount}
+              onChange={(e) => setPackageCount(e.target.value)}
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
             />
           </div>
         </div>
       </div>
 
-      {/* Airport Delivery Assignment */}
+      {/* Special Instructions */}
       <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-        <h3 className="text-base font-semibold text-gray-900 mb-4">Airport Delivery Assignment</h3>
-
-        {/* Desktop View */}
-        <div className="hidden lg:block">
-          <div className="grid grid-cols-12 gap-4 mb-6">
-            <div className="col-span-3">
-              <label className="text-xs font-semibold text-gray-700 uppercase mb-2 block">Pickup Location</label>
-              <div>
-                <p className="text-sm font-medium text-gray-900">Central Packaging Warehouse</p>
-                <p className="text-xs text-gray-500">Industrial Area, Sector 5</p>
-              </div>
-            </div>
-
-            <div className="col-span-3">
-              <label className="text-xs font-semibold text-gray-700 uppercase mb-2 block">Destination</label>
-              <div>
-                <p className="text-sm font-medium text-gray-900">International Airport</p>
-                <p className="text-xs text-gray-500">Cargo Terminal 2</p>
-              </div>
-            </div>
-
-            <div className="col-span-3">
-              <label className="text-xs font-semibold text-gray-700 uppercase mb-2 block">Assigned Driver</label>
-              <div className="relative">
-                <select className="w-full appearance-none px-4 py-2.5 pr-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none bg-white">
-                  <option>Ramesh Kumar - DRV-445</option>
-                  <option>Suresh Patel - DRV-223</option>
-                  <option>Vikram Singh - DRV-334</option>
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-600 pointer-events-none" />
-              </div>
-            </div>
-
-            <div className="col-span-3">
-              <label className="text-xs font-semibold text-gray-700 uppercase mb-2 block">Action</label>
-              <div className="flex items-center gap-2">
-                <button className="p-2.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors border border-emerald-600">
-                  <Edit2 className="w-4 h-4" />
-                </button>
-                <button className="p-2.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-red-600">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile View */}
-        <div className="lg:hidden space-y-4 mb-6">
-          <div>
-            <label className="text-xs font-semibold text-gray-700 uppercase mb-2 block">Pickup Location</label>
-            <p className="text-sm font-medium text-gray-900">Central Packaging Warehouse</p>
-            <p className="text-xs text-gray-500">Industrial Area, Sector 5</p>
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-gray-700 uppercase mb-2 block">Destination</label>
-            <p className="text-sm font-medium text-gray-900">International Airport</p>
-            <p className="text-xs text-gray-500">Cargo Terminal 2</p>
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-gray-700 uppercase mb-2 block">Assigned Driver</label>
-            <div className="relative">
-              <select className="w-full appearance-none px-4 py-2.5 pr-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none bg-white">
-                <option>Ramesh Kumar - DRV-445</option>
-                <option>Suresh Patel - DRV-223</option>
-                <option>Vikram Singh - DRV-334</option>
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-600 pointer-events-none" />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button className="flex-1 p-2.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors border-2 border-emerald-600 font-medium">
-              <Edit2 className="w-4 h-4 inline-block mr-2" />
-              Edit
-            </button>
-            <button className="flex-1 p-2.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors border-2 border-red-600 font-medium">
-              <X className="w-4 h-4 inline-block mr-2" />
-              Remove
-            </button>
-          </div>
-        </div>
-
-        {/* Special Instructions */}
-        <div className="mb-6">
-          <label className="text-sm font-medium text-gray-700 mb-2 block">Special Instructions / Notes</label>
-          <textarea
-            rows="3"
-            placeholder="Temperature control required. Maintain 2-4°C during transport..."
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-none"
-            defaultValue="Temperature control required. Maintain 2-4°C during transport..."
-          />
-        </div>
-
-        {/* Important Information Box */}
-        <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <h4 className="text-sm font-semibold text-blue-900 mb-1">Important Information</h4>
-              <p className="text-sm text-blue-800 mb-1">Ensure all customs documentation is prepared</p>
-              <p className="text-sm text-blue-800 mb-1">Export clearance scheduled for 15/12/2024, 8:00 AM</p>
-              <p className="text-sm text-blue-800">Flight: AI-456 to Dubai International</p>
-            </div>
-          </div>
-        </div>
+        <label className="text-sm font-medium text-gray-700 mb-2 block">Special Instructions / Notes</label>
+        <textarea
+          rows="3"
+          placeholder="Temperature control required. Maintain 2-4°C during transport..."
+          value={specialInstructions}
+          onChange={(e) => setSpecialInstructions(e.target.value)}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-none"
+        />
       </div>
 
       {/* Action Buttons */}
@@ -265,7 +227,10 @@ const OrderAssignCreateStage2 = () => {
         >
           Back
         </button>
-        <button className="px-6 py-3 bg-emerald-600 text-white rounded-lg font-medium shadow-sm hover:bg-emerald-700 transition-colors">
+        <button
+          onClick={handleConfirmAndDispatch}
+          className="px-6 py-3 bg-emerald-600 text-white rounded-lg font-medium shadow-sm hover:bg-emerald-700 transition-colors"
+        >
           Confirm & Dispatch
         </button>
       </div>

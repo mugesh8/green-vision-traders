@@ -1,120 +1,97 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, ChevronRight, ChevronLeft } from 'lucide-react';
+import { getAllOrders } from '../../../api/orderApi';
+import { getOrderAssignment } from '../../../api/orderAssignmentApi';
 
 const OrderAssignManagement = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [assignments, setAssignments] = useState({});
+
+  // Fetch orders from API
+  const fetchOrderData = async () => {
+    try {
+      setLoading(true);
+      const response = await getAllOrders();
+      const ordersData = response.data || [];
+      setOrders(ordersData);
+      
+      // Fetch assignment data for each order
+      const assignmentsData = {};
+      for (const order of ordersData) {
+        try {
+          const assignmentResponse = await getOrderAssignment(order.oid);
+          assignmentsData[order.oid] = assignmentResponse.data;
+        } catch (err) {
+          // If assignment doesn't exist, that's fine
+          assignmentsData[order.oid] = null;
+        }
+      }
+      setAssignments(assignmentsData);
+      
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching orders:', err);
+      setError('Failed to load orders');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrderData();
+  }, []);
 
   const stats = [
-    { label: 'Total Orders', value: '142', bgColor: 'bg-emerald-50', textColor: 'text-emerald-900' },
-    { label: 'Created', value: '28', bgColor: 'bg-emerald-100', textColor: 'text-emerald-900' },
-    { label: 'Assigned', value: '45', bgColor: 'bg-emerald-200', textColor: 'text-emerald-900' },
-    { label: 'In Transit', value: '51', bgColor: 'bg-emerald-500', textColor: 'text-white' },
-    { label: 'Delivered', value: '18', bgColor: 'bg-[#0D7C66]', textColor: 'text-white' },
+    { label: 'Total Orders', value: orders.length.toString(), bgColor: 'bg-emerald-50', textColor: 'text-emerald-900' },
+    { label: 'Created', value: orders.filter(o => o.order_status === 'pending').length.toString(), bgColor: 'bg-emerald-100', textColor: 'text-emerald-900' },
+    { label: 'Assigned', value: Object.values(assignments).filter(a => a !== null).length.toString(), bgColor: 'bg-emerald-200', textColor: 'text-emerald-900' },
+    { label: 'In Transit', value: orders.filter(o => o.order_status === 'processing').length.toString(), bgColor: 'bg-emerald-500', textColor: 'text-white' },
+    { label: 'Delivered', value: orders.filter(o => o.order_status === 'delivered').length.toString(), bgColor: 'bg-[#0D7C66]', textColor: 'text-white' },
   ];
 
-  const orders = [
-    {
-      id: 'ORD-2024-1345',
-      customer: { name: 'Fresh Mart Store', code: 'CLI-088' },
-      products: [
-        { name: 'Tomato', color: 'bg-yellow-100 text-yellow-800' },
-        { name: 'Carrot', color: 'bg-blue-100 text-blue-800' },
-      ],
-      more: 2,
-      assignedTo: { name: 'Green Fields Farm', code: 'VEN-001' },
-      driver: { name: 'Raj Kumar', code: 'DRV-023' },
-      amount: '₹24,500',
-      status: 'Assigned',
-      statusColor: 'bg-emerald-100 text-emerald-700',
-    },
-    {
-      id: 'ORD-2024-1344',
-      customer: { name: 'Organic Valley Store', code: 'CLI-045' },
-      products: [
-        { name: 'Lettuce', color: 'bg-green-100 text-green-800' },
-        { name: 'Onion', color: 'bg-pink-100 text-pink-800' },
-      ],
-      more: 0,
-      assignedTo: { name: 'Organic Valley Farm', code: 'VEN-003' },
-      driver: { name: 'Amit Singh', code: 'DRV-015' },
-      amount: '₹18,200',
-      status: 'In Transit',
-      statusColor: 'bg-yellow-100 text-yellow-700',
-    },
-    {
-      id: 'ORD-2024-1343',
-      customer: { name: 'Super Veggies Ltd', code: 'CLI-112' },
-      products: [
-        { name: 'Capsicum', color: 'bg-red-100 text-red-800' },
-        { name: 'Potato', color: 'bg-purple-100 text-purple-800' },
-      ],
-      more: 0,
-      assignedTo: { name: 'Not Assigned', code: '' },
-      driver: { name: 'Not Assigned', code: '' },
-      amount: '₹31,750',
-      status: 'Created',
-      statusColor: 'bg-purple-100 text-purple-700',
-    },
-    {
-      id: 'ORD-2024-1342',
-      customer: { name: 'Farm Fresh Retail', code: 'CLI-078' },
-      products: [
-        { name: 'Corn', color: 'bg-yellow-100 text-yellow-800' },
-        { name: 'Broccoli', color: 'bg-green-100 text-green-800' },
-      ],
-      more: 1,
-      assignedTo: { name: 'Harvest Supply', code: 'VEN-008' },
-      driver: { name: 'Priya Sharma', code: 'DRV-041' },
-      amount: '₹15,900',
-      status: 'Collected',
-      statusColor: 'bg-gray-700 text-white',
-    },
-    {
-      id: 'ORD-2024-1341',
-      customer: { name: 'Green Basket Co.', code: 'CLI-156' },
-      products: [
-        { name: 'Beetroot', color: 'bg-pink-100 text-pink-800' },
-        { name: 'Chili', color: 'bg-orange-100 text-orange-800' },
-      ],
-      more: 0,
-      assignedTo: { name: 'Agri Logistics', code: 'VEN-004' },
-      driver: { name: 'Vikram Reddy', code: 'DRV-037' },
-      amount: '₹27,300',
-      status: 'Delivered',
-      statusColor: 'bg-emerald-600 text-white',
-    },
-    {
-      id: 'ORD-2024-1340',
-      customer: { name: "Nature's Bounty", code: 'CLI-203' },
-      products: [
-        { name: 'Garlic', color: 'bg-blue-100 text-blue-800' },
-        { name: 'Ginger', color: 'bg-indigo-100 text-indigo-800' },
-      ],
-      more: 3,
-      assignedTo: { name: 'Fresh Produce Hub', code: 'VEN-012' },
-      driver: { name: 'Suresh Patel', code: 'DRV-042' },
-      amount: '₹22,450',
-      status: 'Packed',
-      statusColor: 'bg-yellow-100 text-yellow-700',
-    },
-    {
-      id: 'ORD-2024-1339',
-      customer: { name: 'Urban Greens Store', code: 'CLI-187' },
-      products: [
-        { name: 'Peas', color: 'bg-green-100 text-green-800' },
-        { name: 'Cabbage', color: 'bg-red-100 text-red-800' },
-      ],
-      more: 0,
-      assignedTo: { name: 'Green Fields Farm', code: 'VEN-001' },
-      driver: { name: 'Raj Kumar', code: 'DRV-023' },
-      amount: '₹19,800',
-      status: 'Delivered',
-      statusColor: 'bg-emerald-600 text-white',
-    },
-  ];
+  // Filter orders based on search query
+  const filteredOrders = orders.filter(order => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      order.oid.toLowerCase().includes(query) ||
+      order.customer_name.toLowerCase().includes(query)
+    );
+  });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading orders...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-xl mb-4">Error</div>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
@@ -200,65 +177,68 @@ const OrderAssignManagement = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {orders.map((order, index) => (
-                <tr key={index} className="hover:bg-gray-50 transition-colors">
+              {filteredOrders.map((order, index) => (
+                <tr key={order.oid} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm font-medium text-gray-900">{order.id}</span>
+                    <span className="text-sm font-medium text-gray-900">{order.oid}</span>
                   </td>
                   <td className="px-6 py-4">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{order.customer.name}</p>
-                      <p className="text-xs text-gray-500">{order.customer.code}</p>
+                      <p className="text-sm font-medium text-gray-900">{order.customer_name}</p>
+                      <p className="text-xs text-gray-500">{order.customer_id || 'N/A'}</p>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-wrap gap-2">
-                      {order.products.map((product, idx) => (
+                      {order.items && order.items.slice(0, 2).map((item, idx) => (
                         <span
                           key={idx}
-                          className={`px-2.5 py-1 rounded-full text-xs font-medium ${product.color}`}
+                          className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
                         >
-                          {product.name}
+                          {item.product || 'Unknown Product'}
                         </span>
                       ))}
-                      {order.more > 0 && (
+                      {order.items && order.items.length > 2 && (
                         <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                          +{order.more}
+                          +{order.items.length - 2}
                         </span>
                       )}
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div>
-                      <p className={`text-sm font-medium ${order.assignedTo.code ? 'text-gray-900' : 'text-gray-500 italic'}`}>
-                        {order.assignedTo.name}
+                      <p className="text-sm font-medium text-gray-900">
+                        {assignments[order.oid] ? 'Assigned' : 'Not Assigned'}
                       </p>
-                      {order.assignedTo.code && (
-                        <p className="text-xs text-gray-500">{order.assignedTo.code}</p>
-                      )}
+                      <p className="text-xs text-gray-500"></p>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div>
-                      <p className={`text-sm font-medium ${order.driver.code ? 'text-gray-900' : 'text-gray-500 italic'}`}>
-                        {order.driver.name}
+                      <p className={`text-sm font-medium ${assignments[order.oid] ? 'text-gray-900' : 'text-gray-500 italic'}`}>
+                        {assignments[order.oid] ? 'Assigned' : 'Not Assigned'}
                       </p>
-                      {order.driver.code && (
-                        <p className="text-xs text-gray-500">{order.driver.code}</p>
-                      )}
+                      <p className="text-xs text-gray-500"></p>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm font-semibold text-gray-900">{order.amount}</span>
+                    <span className="text-sm font-semibold text-gray-900">₹{order.items ? order.items.reduce((sum, item) => sum + parseFloat(item.total_price || 0), 0).toFixed(2) : '0.00'}</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${order.statusColor}`}>
-                      {order.status}
+                    <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${{
+                      'pending': 'bg-purple-100 text-purple-700',
+                      'confirmed': 'bg-emerald-100 text-emerald-700',
+                      'processing': 'bg-yellow-100 text-yellow-700',
+                      'shipped': 'bg-blue-100 text-blue-700',
+                      'delivered': 'bg-emerald-600 text-white',
+                      'cancelled': 'bg-red-100 text-red-700'
+                    }[order.order_status] || 'bg-gray-100 text-gray-700'}`}>
+                      {order.order_status.charAt(0).toUpperCase() + order.order_status.slice(1)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <button 
-                      onClick={() => navigate(`/order-assign/stage1/${order.id}`, { state: { orderData: order } })}
+                      onClick={() => navigate(`/order-assign/stage1/${order.oid}`, { state: { orderData: order } })}
                       className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors"
                     >
                       Assign
@@ -274,7 +254,7 @@ const OrderAssignManagement = () => {
         <div className="border-t border-gray-200 px-4 py-4 sm:px-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-sm text-gray-600">
-              Showing <span className="font-medium">6</span> of <span className="font-medium">248</span> Orders
+              Showing <span className="font-medium">{filteredOrders.length}</span> of <span className="font-medium">{orders.length}</span> Orders
             </p>
             <div className="flex items-center gap-2">
               <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
@@ -282,16 +262,6 @@ const OrderAssignManagement = () => {
               </button>
               <button className="w-10 h-10 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition-colors">
                 1
-              </button>
-              <button className="w-10 h-10 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors">
-                2
-              </button>
-              <span className="px-2 text-gray-600">...</span>
-              <button className="w-10 h-10 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors">
-                9
-              </button>
-              <button className="w-10 h-10 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors">
-                10
               </button>
               <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                 <ChevronRight className="w-4 h-4 text-gray-600" />

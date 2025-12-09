@@ -25,14 +25,25 @@ const EditDriver = () => {
     insurance_number: '',
     insurance_expiry_date: '',
     vehicle_condition: 'Good',
+    pollution_certificate: '',
+    ka_permit: '',
     delivery_type: 'Local Pickups',
     status: 'Available'
   });
   
   const [showPassword, setShowPassword] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
+  const [profileImagePreview, setProfileImagePreview] = useState(null);
   const [driverImage, setDriverImage] = useState(null);
+  const [driverImagePreview, setDriverImagePreview] = useState(null);
   const [driverIdProof, setDriverIdProof] = useState(null);
+  const [driverIdProofPreview, setDriverIdProofPreview] = useState(null);
+  const [insuranceDoc, setInsuranceDoc] = useState(null);
+  const [insuranceDocPreview, setInsuranceDocPreview] = useState(null);
+  const [pollutionDoc, setPollutionDoc] = useState(null);
+  const [pollutionDocPreview, setPollutionDocPreview] = useState(null);
+  const [kaPermitDoc, setKaPermitDoc] = useState(null);
+  const [kaPermitDocPreview, setKaPermitDocPreview] = useState(null);
   const [vehicleTypes] = useState([
     'tata-ace',
     'mahindra-bolero', 
@@ -78,9 +89,10 @@ const EditDriver = () => {
           city: driver.city || '',
           state: driver.state || '',
           pin_code: driver.pin_code || driver.pincode || '',
-          password: '', // Don't populate password field for security reasons
+          password: '',
           license_number: driver.license_number || driver.license || '',
-          vehicle_ownership: driver.vehicle_ownership || '',
+          license_expiry_date: driver.license_expiry_date || '',
+          vehicle_ownership: driver.vehicle_type || driver.vehicle_ownership || '',
           available_vehicle: driver.available_vehicle || driver.vehicle_type || driver.vehicleType || '',
           vehicle_type: driver.vehicle_type || driver.vehicleType || '',
           vehicle_number: driver.vehicle_number || driver.vehicleNumber || '',
@@ -88,8 +100,15 @@ const EditDriver = () => {
           insurance_number: driver.insurance_number || driver.insuranceNumber || '',
           insurance_expiry_date: driver.insurance_expiry_date || driver.insuranceExpiryDate || '',
           vehicle_condition: driver.vehicle_condition || driver.vehicleCondition || 'Good',
+          pollution_certificate: driver.pollution_certificate || driver.pollutionCertificate || '',
+          pollution_certificate_expiry_date: driver.pollution_certificate_expiry_date || '',
+          ka_permit: driver.ka_permit || driver.kaPermit || '',
+          ka_permit_expiry_date: driver.ka_permit_expiry_date || '',
           delivery_type: driver.delivery_type || driver.deliveryType || 'Local Pickups',
-          status: driver.status || 'Available'
+          status: driver.status || 'Available',
+          driver_image: driver.driver_image || '',
+          license_image: driver.license_image || '',
+          driver_id_proof: driver.driver_id_proof || ''
         });
       } catch (error) {
         console.error('Error fetching driver data:', error);
@@ -122,13 +141,29 @@ const EditDriver = () => {
   const handleFileUpload = (type, event) => {
     const file = event.target.files[0];
     if (file) {
-      if (type === 'profile') {
-        setProfileImage(file);
-      } else if (type === 'driver_image') {
-        setDriverImage(file);
-      } else {
-        setDriverIdProof(file);
-      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (type === 'profile') {
+          setProfileImage(file);
+          setProfileImagePreview(reader.result);
+        } else if (type === 'driver_image') {
+          setDriverImage(file);
+          setDriverImagePreview(reader.result);
+        } else if (type === 'driver_id_proof') {
+          setDriverIdProof(file);
+          setDriverIdProofPreview(reader.result);
+        } else if (type === 'insurance') {
+          setInsuranceDoc(file);
+          setInsuranceDocPreview(reader.result);
+        } else if (type === 'pollution') {
+          setPollutionDoc(file);
+          setPollutionDocPreview(reader.result);
+        } else if (type === 'kaPermit') {
+          setKaPermitDoc(file);
+          setKaPermitDocPreview(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -139,14 +174,17 @@ const EditDriver = () => {
       const formDataToSend = new FormData();
       
       Object.keys(formData).forEach(key => {
-        if (key !== 'password' || formData[key]) {
+        if (formData[key] && (key !== 'password' || formData[key])) {
           formDataToSend.append(key, formData[key]);
         }
       });
       
-      if (profileImage) formDataToSend.append('profile_image', profileImage);
-      if (driverImage) formDataToSend.append('driver_image', driverImage);
+      if (profileImage) formDataToSend.append('driver_image', profileImage);
+      if (driverImage) formDataToSend.append('license_image', driverImage);
       if (driverIdProof) formDataToSend.append('driver_id_proof', driverIdProof);
+      if (insuranceDoc) formDataToSend.append('insurance_doc', insuranceDoc);
+      if (pollutionDoc) formDataToSend.append('pollution_doc', pollutionDoc);
+      if (kaPermitDoc) formDataToSend.append('ka_permit_doc', kaPermitDoc);
       
       await updateDriver(id, formDataToSend);
       navigate('/drivers');
@@ -201,22 +239,6 @@ const EditDriver = () => {
               <h2 className="text-xl font-bold text-gray-900 mb-6">Personal Information</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                {/* Driver ID */}
-                <div>
-                  <label className="block text-sm text-gray-700 mb-2">
-                    Driver ID <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="driver_id"
-                    value={formData.driver_id}
-                    onChange={handleInputChange}
-                    placeholder="Enter driver ID"
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
-                    required
-                  />
-                </div>
-
                 {/* Driver Name */}
                 <div>
                   <label className="block text-sm text-gray-700 mb-2">
@@ -243,14 +265,12 @@ const EditDriver = () => {
                     name="phone_number"
                     value={formData.phone_number}
                     onChange={handleInputChange}
-                    placeholder="Enter phone number"
+                    placeholder="+91"
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
                     required
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 {/* Email Address */}
                 <div>
                   <label className="block text-sm text-gray-700 mb-2">
@@ -264,51 +284,6 @@ const EditDriver = () => {
                     placeholder="driver@email.com"
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
                   />
-                </div>
-
-                {/* Password */}
-                <div>
-                  <label className="block text-sm text-gray-700 mb-2">
-                    Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      name="password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      placeholder="Enter new password (leave blank to keep current)"
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm pr-10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                    >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Status */}
-                <div>
-                  <label className="block text-sm text-gray-700 mb-2">
-                    Status
-                  </label>
-                  <div className="relative">
-                    <select
-                      name="status"
-                      value={formData.status}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent appearance-none text-sm cursor-pointer"
-                    >
-                      <option value="Available">Available</option>
-                      <option value="On Trip">On Trip</option>
-                      <option value="Break">Break</option>
-                      <option value="Inactive">Inactive</option>
-                    </select>
-                    <ChevronRight className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none rotate-90" />
-                  </div>
                 </div>
               </div>
 
@@ -359,7 +334,7 @@ const EditDriver = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 {/* Pin Code */}
                 <div>
                   <label className="block text-sm text-gray-700 mb-2">
@@ -373,6 +348,30 @@ const EditDriver = () => {
                     placeholder="Enter pin code"
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
                   />
+                </div>
+
+                {/* Password */}
+                <div>
+                  <label className="block text-sm text-gray-700 mb-2">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      name="password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      placeholder="Enter Password"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
                 </div>
 
                 {/* License Number */}
@@ -390,20 +389,323 @@ const EditDriver = () => {
                     required
                   />
                 </div>
+              </div>
 
-                {/* Insurance Number */}
+              {/* File Uploads */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Upload Profile Image */}
                 <div>
                   <label className="block text-sm text-gray-700 mb-2">
-                    Insurance Number
+                    Upload Profile Image
                   </label>
-                  <input
-                    type="text"
-                    name="insurance_number"
-                    value={formData.insurance_number}
-                    onChange={handleInputChange}
-                    placeholder="Enter insurance number"
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
-                  />
+                  <div className="flex items-center gap-4">
+                    <div className="relative">
+                      <input
+                        type="file"
+                        id="profileUpload"
+                        onChange={(e) => handleFileUpload('profile', e)}
+                        accept=".jpg,.jpeg,.png,.gif"
+                        className="hidden"
+                      />
+                      <label
+                        htmlFor="profileUpload"
+                        className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors overflow-hidden"
+                      >
+                        {profileImagePreview ? (
+                          <img src={profileImagePreview} alt="Profile" className="w-full h-full object-cover" />
+                        ) : formData.driver_image ? (
+                          <img 
+                            src={`${import.meta.env.VITE_API_BASE_URL.replace('/api/v1', '')}${formData.driver_image}`}
+                            alt="Profile"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Upload className="w-6 h-6 text-gray-600" />
+                        )}
+                      </label>
+                    </div>
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => document.getElementById('profileUpload').click()}
+                        className="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        Upload Image
+                      </button>
+                      {profileImage ? (
+                        <p className="text-xs text-green-600 mt-2 font-medium">
+                          ✓ {profileImage.name}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-gray-500 mt-2">
+                          Upload profile image: JPG, PNG or GIF. Max 2MB.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Upload License Image */}
+                <div>
+                  <label className="block text-sm text-gray-700 mb-2">
+                    Upload License Image
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <div className="relative">
+                      <input
+                        type="file"
+                        id="licenseUpload"
+                        onChange={(e) => handleFileUpload('driver_image', e)}
+                        accept=".jpg,.jpeg,.png,.gif"
+                        className="hidden"
+                      />
+                      <label
+                        htmlFor="licenseUpload"
+                        className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors overflow-hidden"
+                      >
+                        {driverImagePreview ? (
+                          <img src={driverImagePreview} alt="License" className="w-full h-full object-cover" />
+                        ) : formData.license_image ? (
+                          <img 
+                            src={`${import.meta.env.VITE_API_BASE_URL.replace('/api/v1', '')}${formData.license_image}`}
+                            alt="License"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Upload className="w-6 h-6 text-gray-600" />
+                        )}
+                      </label>
+                    </div>
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => document.getElementById('licenseUpload').click()}
+                        className="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        Upload File
+                      </button>
+                      {driverImage ? (
+                        <p className="text-xs text-green-600 mt-2 font-medium">
+                          ✓ {driverImage.name}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-gray-500 mt-2">
+                          Upload a license image: JPG, PNG or GIF. Max 2MB.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Upload ID Proof */}
+                <div>
+                  <label className="block text-sm text-gray-700 mb-2">
+                    Upload Id Proof
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <div className="relative">
+                      <input
+                        type="file"
+                        id="idProofUpload"
+                        onChange={(e) => handleFileUpload('driver_id_proof', e)}
+                        accept=".jpg,.jpeg,.png,.gif"
+                        className="hidden"
+                      />
+                      <label
+                        htmlFor="idProofUpload"
+                        className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors overflow-hidden"
+                      >
+                        {driverIdProofPreview ? (
+                          <img src={driverIdProofPreview} alt="ID Proof" className="w-full h-full object-cover" />
+                        ) : formData.driver_id_proof ? (
+                          <img 
+                            src={`${import.meta.env.VITE_API_BASE_URL.replace('/api/v1', '')}${formData.driver_id_proof}`}
+                            alt="ID Proof"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Upload className="w-6 h-6 text-gray-600" />
+                        )}
+                      </label>
+                    </div>
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => document.getElementById('idProofUpload').click()}
+                        className="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        Upload Image
+                      </button>
+                      {driverIdProof ? (
+                        <p className="text-xs text-green-600 mt-2 font-medium">
+                          ✓ {driverIdProof.name}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-gray-500 mt-2">
+                          Upload an ID proof: JPG, PNG or GIF. Max 2MB.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Additional Document Uploads */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                {/* Upload Insurance Document */}
+                <div>
+                  <label className="block text-sm text-gray-700 mb-2">
+                    Upload Insurance Document
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <div className="relative">
+                      <input
+                        type="file"
+                        id="insuranceDocUpload"
+                        onChange={(e) => handleFileUpload('insurance', e)}
+                        accept=".jpg,.jpeg,.png,.gif,.pdf"
+                        className="hidden"
+                      />
+                      <label
+                        htmlFor="insuranceDocUpload"
+                        className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors overflow-hidden"
+                      >
+                        {insuranceDocPreview ? (
+                          <img src={insuranceDocPreview} alt="Insurance" className="w-full h-full object-cover" />
+                        ) : formData.insurance_doc ? (
+                          <img 
+                            src={`${import.meta.env.VITE_API_BASE_URL.replace('/api/v1', '')}${formData.insurance_doc}`}
+                            alt="Insurance"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Upload className="w-6 h-6 text-gray-600" />
+                        )}
+                      </label>
+                    </div>
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => document.getElementById('insuranceDocUpload').click()}
+                        className="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        Upload File
+                      </button>
+                      {insuranceDoc ? (
+                        <p className="text-xs text-green-600 mt-2 font-medium">
+                          ✓ {insuranceDoc.name}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-gray-500 mt-2">
+                          Upload insurance doc: JPG, PNG, GIF or PDF. Max 5MB.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Upload Pollution Certificate Document */}
+                <div>
+                  <label className="block text-sm text-gray-700 mb-2">
+                    Upload Pollution Certificate
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <div className="relative">
+                      <input
+                        type="file"
+                        id="pollutionDocUpload"
+                        onChange={(e) => handleFileUpload('pollution', e)}
+                        accept=".jpg,.jpeg,.png,.gif,.pdf"
+                        className="hidden"
+                      />
+                      <label
+                        htmlFor="pollutionDocUpload"
+                        className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors overflow-hidden"
+                      >
+                        {pollutionDocPreview ? (
+                          <img src={pollutionDocPreview} alt="Pollution" className="w-full h-full object-cover" />
+                        ) : formData.pollution_doc ? (
+                          <img 
+                            src={`${import.meta.env.VITE_API_BASE_URL.replace('/api/v1', '')}${formData.pollution_doc}`}
+                            alt="Pollution"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Upload className="w-6 h-6 text-gray-600" />
+                        )}
+                      </label>
+                    </div>
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => document.getElementById('pollutionDocUpload').click()}
+                        className="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        Upload File
+                      </button>
+                      {pollutionDoc ? (
+                        <p className="text-xs text-green-600 mt-2 font-medium">
+                          ✓ {pollutionDoc.name}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-gray-500 mt-2">
+                          Upload pollution cert: JPG, PNG, GIF or PDF. Max 5MB.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Upload KA Permit Document */}
+                <div>
+                  <label className="block text-sm text-gray-700 mb-2">
+                    Upload KA Permit Document
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <div className="relative">
+                      <input
+                        type="file"
+                        id="kaPermitDocUpload"
+                        onChange={(e) => handleFileUpload('kaPermit', e)}
+                        accept=".jpg,.jpeg,.png,.gif,.pdf"
+                        className="hidden"
+                      />
+                      <label
+                        htmlFor="kaPermitDocUpload"
+                        className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors overflow-hidden"
+                      >
+                        {kaPermitDocPreview ? (
+                          <img src={kaPermitDocPreview} alt="KA Permit" className="w-full h-full object-cover" />
+                        ) : formData.ka_permit_doc ? (
+                          <img 
+                            src={`${import.meta.env.VITE_API_BASE_URL.replace('/api/v1', '')}${formData.ka_permit_doc}`}
+                            alt="KA Permit"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Upload className="w-6 h-6 text-gray-600" />
+                        )}
+                      </label>
+                    </div>
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => document.getElementById('kaPermitDocUpload').click()}
+                        className="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        Upload File
+                      </button>
+                      {kaPermitDoc ? (
+                        <p className="text-xs text-green-600 mt-2 font-medium">
+                          ✓ {kaPermitDoc.name}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-gray-500 mt-2">
+                          Upload KA permit: JPG, PNG, GIF or PDF. Max 5MB.
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -413,7 +715,7 @@ const EditDriver = () => {
               <h2 className="text-xl font-bold text-gray-900 mb-6">Vehicle Information</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                {/* Vehicle Ownership */}
+                {/* Vehicle Type */}
                 <div>
                   <label className="block text-sm text-gray-700 mb-2">
                     Vehicle Type <span className="text-red-500">*</span>
@@ -445,7 +747,7 @@ const EditDriver = () => {
                       name="available_vehicle"
                       value={formData.available_vehicle}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent appearance-none text-sm cursor-pointer"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent appearance-none text-sm text-gray-500 cursor-pointer"
                       required
                     >
                       <option value="">Select available vehicle</option>
@@ -492,7 +794,22 @@ const EditDriver = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                {/* Insurance Number */}
+                <div>
+                  <label className="block text-sm text-gray-700 mb-2">
+                    Insurance Number
+                  </label>
+                  <input
+                    type="text"
+                    name="insurance_number"
+                    value={formData.insurance_number}
+                    onChange={handleInputChange}
+                    placeholder="Enter insurance number"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                  />
+                </div>
+
                 {/* Insurance Expiry Date */}
                 <div>
                   <label className="block text-sm text-gray-700 mb-2">
@@ -521,11 +838,87 @@ const EditDriver = () => {
                     >
                       <option value="Excellent">Excellent</option>
                       <option value="Good">Good</option>
-                      <option value="Average">Average</option>
+                      <option value="Fair">Fair</option>
                       <option value="Poor">Poor</option>
                     </select>
                     <ChevronRight className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none rotate-90" />
                   </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                {/* License Expiry Date */}
+                <div>
+                  <label className="block text-sm text-gray-700 mb-2">
+                    License Expiry Date
+                  </label>
+                  <input
+                    type="date"
+                    name="license_expiry_date"
+                    value={formData.license_expiry_date}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Pollution Certificate */}
+                <div>
+                  <label className="block text-sm text-gray-700 mb-2">
+                    Pollution Certificate
+                  </label>
+                  <input
+                    type="text"
+                    name="pollution_certificate"
+                    value={formData.pollution_certificate}
+                    onChange={handleInputChange}
+                    placeholder="Enter pollution certificate number"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                  />
+                </div>
+
+                {/* Pollution Certificate Expiry Date */}
+                <div>
+                  <label className="block text-sm text-gray-700 mb-2">
+                    Pollution Certificate Expiry Date
+                  </label>
+                  <input
+                    type="date"
+                    name="pollution_certificate_expiry_date"
+                    value={formData.pollution_certificate_expiry_date}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                  />
+                </div>
+
+                {/* KA Permit */}
+                <div>
+                  <label className="block text-sm text-gray-700 mb-2">
+                    KA Permit
+                  </label>
+                  <input
+                    type="text"
+                    name="ka_permit"
+                    value={formData.ka_permit}
+                    onChange={handleInputChange}
+                    placeholder="Enter KA permit number"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                  />
+                </div>
+
+                {/* KA Permit Expiry Date */}
+                <div>
+                  <label className="block text-sm text-gray-700 mb-2">
+                    KA Permit Expiry Date
+                  </label>
+                  <input
+                    type="date"
+                    name="ka_permit_expiry_date"
+                    value={formData.ka_permit_expiry_date}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                  />
                 </div>
               </div>
             </div>
@@ -540,7 +933,7 @@ const EditDriver = () => {
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Local Pickups */}
+                {/* Collection Delivery */}
                 <label className={`relative flex items-start p-4 border-2 rounded-xl cursor-pointer transition-all ${
                   formData.delivery_type === 'Local Pickups' 
                     ? 'border-teal-600 bg-teal-50' 
@@ -562,7 +955,7 @@ const EditDriver = () => {
                   </div>
                 </label>
 
-                {/* Line Airport */}
+                {/* Airport Delivery */}
                 <label className={`relative flex items-start p-4 border-2 rounded-xl cursor-pointer transition-all ${
                   formData.delivery_type === 'Line Airport' 
                     ? 'border-teal-600 bg-teal-50' 
@@ -608,142 +1001,41 @@ const EditDriver = () => {
               </div>
             </div>
 
-            {/* File Uploads */}
-            <div className="mb-8">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Document Uploads</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Upload Profile Image */}
-                <div>
-                  <label className="block text-sm text-gray-700 mb-2">
-                    Upload Profile Image
-                  </label>
-                  <div className="flex items-center gap-4">
-                    <div className="relative">
-                      <input
-                        type="file"
-                        id="profileUpload"
-                        onChange={(e) => handleFileUpload('profile', e)}
-                        accept=".jpg,.jpeg,.png,.gif"
-                        className="hidden"
-                      />
-                      <label
-                        htmlFor="profileUpload"
-                        className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors"
-                      >
-                        <Upload className="w-6 h-6 text-gray-600" />
-                      </label>
-                    </div>
-                    <div>
-                      <button
-                        type="button"
-                        onClick={() => document.getElementById('profileUpload').click()}
-                        className="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                      >
-                        Upload Image
-                      </button>
-                      {profileImage && (
-                        <p className="text-xs text-green-600 mt-2 font-medium">
-                          ✓ {profileImage.name}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Upload Driver Image */}
-                <div>
-                  <label className="block text-sm text-gray-700 mb-2">
-                    Upload Driver Licence
-                  </label>
-                  <div className="flex items-center gap-4">
-                    <div className="relative">
-                      <input
-                        type="file"
-                        id="driverImageUpload"
-                        onChange={(e) => handleFileUpload('driver_image', e)}
-                        accept=".jpg,.jpeg,.png,.gif"
-                        className="hidden"
-                      />
-                      <label
-                        htmlFor="driverImageUpload"
-                        className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors"
-                      >
-                        <Upload className="w-6 h-6 text-gray-600" />
-                      </label>
-                    </div>
-                    <div>
-                      <button
-                        type="button"
-                        onClick={() => document.getElementById('driverImageUpload').click()}
-                        className="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                      >
-                        Upload Image
-                      </button>
-                      {driverImage && (
-                        <p className="text-xs text-green-600 mt-2 font-medium">
-                          ✓ {driverImage.name}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Upload ID Proof */}
-                <div>
-                  <label className="block text-sm text-gray-700 mb-2">
-                    Upload ID Proof
-                  </label>
-                  <div className="flex items-center gap-4">
-                    <div className="relative">
-                      <input
-                        type="file"
-                        id="idProofUpload"
-                        onChange={(e) => handleFileUpload('driver_id_proof', e)}
-                        accept=".jpg,.jpeg,.png,.gif"
-                        className="hidden"
-                      />
-                      <label
-                        htmlFor="idProofUpload"
-                        className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors"
-                      >
-                        <Upload className="w-6 h-6 text-gray-600" />
-                      </label>
-                    </div>
-                    <div>
-                      <button
-                        type="button"
-                        onClick={() => document.getElementById('idProofUpload').click()}
-                        className="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                      >
-                        Upload Image
-                      </button>
-                      {driverIdProof && (
-                        <p className="text-xs text-green-600 mt-2 font-medium">
-                          ✓ {driverIdProof.name}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             {/* Footer Actions */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-gray-200">
-              <button
-                type="button"
-                onClick={() => navigate('/drivers')}
-                className="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-6 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
-              >
-                Update Driver
-              </button>
+              {/* Driver Status */}
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-gray-700 font-medium">Driver Status</span>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleInputChange}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
+                >
+                  <option value="Available">Available</option>
+                  <option value="On Trip">On Trip</option>
+                  <option value="Break">Break</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => navigate('/drivers')}
+                  className="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-6 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-sm font-medium transition-colors shadow-sm disabled:opacity-50"
+                >
+                  {loading ? 'Updating Driver...' : 'Update Driver'}
+                </button>
+              </div>
             </div>
           </form>
         )}

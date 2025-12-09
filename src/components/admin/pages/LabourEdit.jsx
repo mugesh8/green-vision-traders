@@ -8,19 +8,19 @@ const EditLabour = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   
-  // Pre-filled form data (in real app, fetch from API based on id)
   const [formData, setFormData] = useState({
-    fullName: 'Rani',
-    labourId: 'LAB-2024-008',
-    mobileNumber: '9977665545',
-    aadhaarNumber: '986756431234',
-    dateOfBirth: '1996-09-09',
-    gender: 'Female',
-    bloodGroup: 'B+',
+    fullName: '',
+    labourId: '',
+    mobileNumber: '',
+    aadhaarNumber: '',
+    dateOfBirth: '',
+    gender: '',
+    bloodGroup: '',
     address: '',
     department: '',
     dailyWage: '',
-    joiningDate: ''
+    joiningDate: '',
+    status: ''
   });
 
   const [photoPreview, setPhotoPreview] = useState(null);
@@ -49,9 +49,10 @@ const EditLabour = () => {
           gender: data.gender,
           bloodGroup: data.blood_group || '',
           address: data.address,
-          department: data.department.toLowerCase(),
+          department: data.department,
           dailyWage: data.daily_wage,
-          joiningDate: data.joining_date
+          joiningDate: data.joining_date,
+          status: data.status === 'InActive' ? 'Inactive' : data.status
         });
         if (data.profile_image) {
           setPhotoPreview(`${BASE_URL}${data.profile_image}`);
@@ -88,9 +89,10 @@ const EditLabour = () => {
       formDataToSend.append('gender', formData.gender);
       formDataToSend.append('blood_group', formData.bloodGroup);
       formDataToSend.append('address', formData.address);
-      formDataToSend.append('department', formData.department.charAt(0).toUpperCase() + formData.department.slice(1));
+      formDataToSend.append('department', formData.department);
       formDataToSend.append('daily_wage', formData.dailyWage);
       formDataToSend.append('joining_date', formData.joiningDate);
+      formDataToSend.append('status', formData.status === 'Inactive' ? 'InActive' : formData.status);
       
       if (profileImage) formDataToSend.append('profile_image', profileImage);
       
@@ -349,10 +351,9 @@ const EditLabour = () => {
                     required
                   >
                     <option value="">Select department</option>
-                    <option value="packing">Packing</option>
-                    <option value="loading">Loading</option>
-                    <option value="unloading">Unloading</option>
-                    <option value="sorting">Sorting</option>
+                    <option value="Packing">Packing</option>
+                    <option value="Loading">Loading</option>
+                    <option value="Unloading">Unloading</option>
                   </select>
                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
                     <svg className="w-4 h-4 text-[#6B8782]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -360,7 +361,7 @@ const EditLabour = () => {
                     </svg>
                   </div>
                 </div>
-                <p className="text-xs text-red-500 mt-1 italic">* Packing or Loading/Unloading department</p>
+
               </div>
 
               {/* Daily Wage */}
@@ -400,6 +401,30 @@ const EditLabour = () => {
                     required
                   />
                   <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#6B8782] pointer-events-none" size={18} />
+                </div>
+              </div>
+
+              {/* Status */}
+              <div>
+                <label className="block text-sm font-medium text-[#0D5C4D] mb-2">
+                  Status <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <select
+                    name="status"
+                    value={formData.status}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2.5 bg-white border border-[#D0E0DB] rounded-lg text-[#0D5C4D] focus:outline-none focus:ring-2 focus:ring-[#0D8568] focus:border-transparent appearance-none cursor-pointer"
+                    required
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                    <svg className="w-4 h-4 text-[#6B8782]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </div>
               </div>
             </div>

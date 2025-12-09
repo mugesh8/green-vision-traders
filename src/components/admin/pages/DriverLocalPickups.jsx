@@ -1,94 +1,67 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Star, ChevronDown, ChevronRight, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
-const DriverAirportDeliveryPage = () => {
+const DriverLocalPickups = () => {
   const navigate = useNavigate();
   const [showStartModal, setShowStartModal] = useState(false);
-  const [showExpensesModal, setShowExpensesModal] = useState(false);
   const [showEndKmModal, setShowEndKmModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [startKm, setStartKm] = useState('');
   const [endKm, setEndKm] = useState('');
-  const [expenseData, setExpenseData] = useState({
-    fuelType: 'Petrol',
-    petrolBunkName: 'Indian Oil Petroleum',
-    unitPrice: '',
-    litre: ''
-  });
-
-  const driverInfo = {
-    name: 'Suresh Kumar',
-    id: 'DRV-002',
-    phone: '+91 98765 43211',
-    email: 'suresh.kumar@email.com',
-    status: 'On Trip',
-    vehicle: {
-      name: 'Mahindra Bolero',
-      number: 'TN 02 CD 5678',
-      capacity: '1.5 Ton'
-    },
-    stats: {
-      todayHours: '6.0 hrs',
-      airportTrips: '184',
-      rating: '4.9'
-    }
-  };
 
   const [orders, setOrders] = useState([
     {
-      id: 'APT-2024-A3421',
-      type: 'Line Airport',
-      pickup: { name: 'Warehouse A', location: 'Main Packing Center' },
-      airport: { name: 'Chennai Airport', terminal: 'Terminal 2 - Cargo' },
-      flightTime: '02:30 PM',
-      timeInfo: '30 mins left',
-      status: 'In Transit',
-      weight: '850 kg'
-    },
-    {
-      id: 'APT-2024-A3420',
-      type: 'Line Airport',
-      pickup: { name: 'Warehouse B', location: 'North Packing Center' },
-      airport: { name: 'Chennai Airport', terminal: 'Terminal 2 - Cargo' },
-      flightTime: '11:45 AM',
-      timeInfo: 'Departed 2 hrs ago',
+      id: 'ORD-2024-A2431',
+      type: 'Local Pickup',
+      pickup: { name: 'Kumar Farm', location: 'Thanjavur District' },
+      dropoff: { name: 'Warehouse A', location: 'Packing Center' },
+      time: '08:30 AM',
+      timeAgo: '2 hrs ago',
       status: 'Delivered',
-      weight: '920 kg'
+      weight: '450 kg'
     },
     {
-      id: 'APT-2024-A3419',
-      type: 'Line Airport',
-      pickup: { name: 'Warehouse C', location: 'South Processing Unit' },
-      airport: { name: 'Trichy Airport', terminal: 'Domestic Cargo' },
-      flightTime: '04:15 PM',
-      timeInfo: 'Scheduled',
+      id: 'ORD-2024-A2432',
+      type: 'Local Pickup',
+      pickup: { name: 'Ravi Suppliers', location: 'Trichy Market' },
+      dropoff: { name: 'Warehouse A', location: 'Packing Center' },
+      time: '10:15 AM',
+      timeAgo: '45 mins ago',
+      status: 'In Transit',
+      weight: '320 kg'
+    },
+    {
+      id: 'ORD-2024-A2433',
+      type: 'Local Pickup',
+      pickup: { name: 'Senthil Farm', location: 'Kumbakonam' },
+      dropoff: { name: 'Warehouse B', location: 'Packing Center' },
+      time: '12:00 PM',
+      timeAgo: 'Scheduled',
       status: 'Collected',
-      weight: '650 kg'
+      weight: '500 kg'
     },
     {
-      id: 'APT-2024-A3418',
-      type: 'Line Airport',
-      pickup: { name: 'Warehouse A', location: 'Main Packing Center' },
-      airport: { name: 'Coimbatore Airport', terminal: 'International Cargo' },
-      flightTime: '08:30 AM',
-      timeInfo: 'Departed 5 hrs ago',
+      id: 'ORD-2024-A2434',
+      type: 'Local Pickup',
+      pickup: { name: 'Murugan Vendors', location: 'Karur' },
+      dropoff: { name: 'Warehouse A', location: 'Packing Center' },
+      time: '07:00 AM',
+      timeAgo: '4 hrs ago',
       status: 'Expenses',
-      weight: '1100 kg'
+      weight: '380 kg'
     },
     {
-      id: 'APT-2024-A3417',
-      type: 'Line Airport',
-      pickup: { name: 'Warehouse B', location: 'North Packing Center' },
-      airport: { name: 'Chennai Airport', terminal: 'Terminal 2 - Cargo' },
-      flightTime: '06:00 PM',
-      timeInfo: 'Evening Flight',
+      id: 'ORD-2024-A2435',
+      type: 'Local Pickup',
+      pickup: { name: 'Lakshmi Farm', location: 'Perambalur' },
+      dropoff: { name: 'Warehouse B', location: 'Packing Center' },
+      time: '02:30 PM',
+      timeAgo: 'Upcoming',
       status: 'Assigned',
-      weight: '780 kg'
+      weight: '600 kg'
     }
   ]);
-
-
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -127,19 +100,6 @@ const DriverAirportDeliveryPage = () => {
     setSelectedOrder(null);
   };
 
-  const handleExpensesClick = (order) => {
-    setSelectedOrder(order);
-    setShowExpensesModal(true);
-  };
-
-  const handleExpensesSubmit = () => {
-    if (!expenseData.petrolBunkName || !expenseData.unitPrice || !expenseData.litre) return;
-    handleStatusChange(selectedOrder.id, 'Expenses');
-    setShowExpensesModal(false);
-    setExpenseData({ fuelType: 'Petrol', petrolBunkName: '', unitPrice: '', litre: '' });
-    setSelectedOrder(null);
-  };
-
   const handleEndKmClick = (order) => {
     setSelectedOrder(order);
     setShowEndKmModal(true);
@@ -151,11 +111,6 @@ const DriverAirportDeliveryPage = () => {
     setShowEndKmModal(false);
     setEndKm('');
     setSelectedOrder(null);
-  };
-
-  const calculateTotal = () => {
-    const total = (parseFloat(expenseData.unitPrice) || 0) * (parseFloat(expenseData.litre) || 0);
-    return total.toFixed(2);
   };
 
   const getActionButton = (order) => {
@@ -190,10 +145,10 @@ const DriverAirportDeliveryPage = () => {
       case 'Delivered':
         return (
           <button
-            onClick={() => handleExpensesClick(order)}
-            className="px-4 py-2 bg-orange-600 text-white rounded-lg text-xs font-medium hover:bg-orange-700 transition-colors"
+            onClick={() => handleEndKmClick(order)}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700 transition-colors"
           >
-            Expenses
+            Complete
           </button>
         );
       case 'Expenses':
@@ -219,9 +174,8 @@ const DriverAirportDeliveryPage = () => {
   }, 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-emerald-50 p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="flex items-center gap-4 mb-6">
           <button
             onClick={() => navigate('/drivers')}
@@ -231,25 +185,23 @@ const DriverAirportDeliveryPage = () => {
             <span className="font-medium">Back to Driver Management</span>
           </button>
         </div>
-        
-
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6 overflow-x-auto">
           <button
             onClick={() => navigate('/drivers/1')}
-            className="px-6 py-2.5 rounded-lg font-medium transition-all text-sm whitespace-nowrap bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
+            className="px-6 py-2.5 rounded-lg font-medium transition-all text-sm bg-white text-gray-600 hover:bg-gray-50 border border-gray-200 whitespace-nowrap"
           >
             Driver Details
           </button>
           <button
-            onClick={() => navigate('/drivers/1/local-pickups')}
-            className="px-6 py-2.5 rounded-lg font-medium transition-all text-sm whitespace-nowrap bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
+            className="px-6 py-2.5 rounded-lg font-medium transition-all text-sm whitespace-nowrap bg-[#0D7C66] text-white shadow-md"
           >
             Local Pickups
           </button>
           <button
-            className="px-6 py-2.5 rounded-lg font-medium transition-all text-sm whitespace-nowrap bg-[#0D7C66] text-white shadow-md"
+            onClick={() => navigate('/drivers/1/airport')}
+            className="px-6 py-2.5 rounded-lg font-medium transition-all text-sm bg-white text-gray-600 hover:bg-gray-50 border border-gray-200 whitespace-nowrap"
           >
             Line Airport
           </button>
@@ -286,15 +238,15 @@ const DriverAirportDeliveryPage = () => {
         </div>
 
         {/* Content Area */}
-          <div className="bg-white rounded-2xl overflow-hidden border border-[#D0E0DB]">
+        <div className="bg-white rounded-2xl overflow-hidden border border-[#D0E0DB]">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="bg-[#D4F4E8]">
                   <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Order ID</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Pickup (Packing Center)</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Airport</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Flight Time</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Pickup Location</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Dropoff</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Time</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Status</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Weight</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Actions</th>
@@ -312,18 +264,12 @@ const DriverAirportDeliveryPage = () => {
                       <div className="text-xs text-[#6B8782]">{order.pickup.location}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="font-medium text-[#0D5C4D] text-sm">{order.airport.name}</div>
-                      <div className="text-xs text-[#6B8782]">{order.airport.terminal}</div>
+                      <div className="font-medium text-[#0D5C4D] text-sm">{order.dropoff.name}</div>
+                      <div className="text-xs text-[#6B8782]">{order.dropoff.location}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="font-semibold text-[#0D5C4D] text-sm">{order.flightTime}</div>
-                      <div className={`text-xs ${
-                        order.timeInfo.includes('left') 
-                          ? 'text-orange-600 font-medium' 
-                          : 'text-[#6B8782]'
-                      }`}>
-                        {order.timeInfo}
-                      </div>
+                      <div className="font-semibold text-[#0D5C4D] text-sm">{order.time}</div>
+                      <div className="text-xs text-[#6B8782]">{order.timeAgo}</div>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
@@ -342,16 +288,15 @@ const DriverAirportDeliveryPage = () => {
             </table>
           </div>
 
-          {/* Pagination */}
           <div className="flex items-center justify-between px-6 py-4 bg-[#F0F4F3] border-t border-[#D0E0DB]">
             <div className="text-sm text-[#6B8782]">
-              Showing {orders.length} airport delivery orders for today
+              Showing {orders.length} orders for today
             </div>
             <div className="text-sm font-semibold text-[#0D5C4D]">
-              Total Cargo: <span className="text-[#0D7C66]">{totalWeight.toLocaleString()} kg</span>
+              Total Weight: <span className="text-[#0D7C66]">{totalWeight.toLocaleString()} kg</span>
             </div>
           </div>
-          </div>
+        </div>
       </div>
 
       {/* Start Kilometer Modal */}
@@ -435,89 +380,8 @@ const DriverAirportDeliveryPage = () => {
           </div>
         </div>
       )}
-
-      {/* Expenses Modal */}
-      {showExpensesModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
-          <div className="bg-white rounded-lg p-6 w-96">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Add Expenses</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm text-gray-700 mb-2">Fuel Type</label>
-                <select
-                  value={expenseData.fuelType}
-                  onChange={(e) => setExpenseData({ ...expenseData, fuelType: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                >
-                  <option value="Petrol">Petrol</option>
-                  <option value="Diesel">Diesel</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm text-gray-700 mb-2">Petrol Bunk Name</label>
-                <select
-                  value={expenseData.petrolBunkName}
-                  onChange={(e) => setExpenseData({ ...expenseData, petrolBunkName: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                >
-                  <option value="Indian Oil Petroleum">Indian Oil Petroleum</option>
-                  <option value="Bharat Petroleum">Bharat Petroleum</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm text-gray-700 mb-2">Unit Price</label>
-                <input
-                  type="number"
-                  value={expenseData.unitPrice}
-                  onChange={(e) => setExpenseData({ ...expenseData, unitPrice: e.target.value })}
-                  placeholder="Enter unit price"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-700 mb-2">Litre</label>
-                <input
-                  type="number"
-                  value={expenseData.litre}
-                  onChange={(e) => setExpenseData({ ...expenseData, litre: e.target.value })}
-                  placeholder="Enter litres"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-700 mb-2">Total Amount</label>
-                <input
-                  type="text"
-                  value={calculateTotal()}
-                  readOnly
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700"
-                />
-              </div>
-            </div>
-            <div className="flex gap-3 justify-end mt-6">
-              <button
-                onClick={() => {
-                  setShowExpensesModal(false);
-                  setExpenseData({ fuelType: 'Petrol', petrolBunkName: 'Indian Oil Petroleum', unitPrice: '', litre: '' });
-                  setSelectedOrder(null);
-                }}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleExpensesSubmit}
-                disabled={!expenseData.petrolBunkName || !expenseData.unitPrice || !expenseData.litre}
-                className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50"
-              >
-                OK
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
-export default DriverAirportDeliveryPage;
+export default DriverLocalPickups;

@@ -1,18 +1,23 @@
-import React, { useState } from 'react';
-import { Search, ChevronDown, ChevronLeft, ChevronRight, X, Info } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Search, ChevronDown, ChevronLeft, ChevronRight, X, Info, Edit2, Trash2, MoreVertical, Shield } from 'lucide-react';
+import AddAdmin from './AddAdmin';
+import EditAdmin from './EditAdmin';
+import ConfirmDeleteModal from '../../common/ConfirmDeleteModal';
+import { getAllAdmins, deleteAdmin, updateRolesPermissions } from '../../../api/adminApi';
 
 // ===== EDIT ROLES & PERMISSIONS MODAL COMPONENT =====
-const EditRolesPermissionsModal = ({ isOpen, onClose, userName = 'Priya Sharma', userRole = 'Supervisor' }) => {
+const EditRolesPermissionsModal = ({ isOpen, onClose, userName = 'Priya Sharma', userRole = 'Supervisor', userId }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(false);
   const [modules, setModules] = useState([
     {
       id: 1,
       name: 'Dashboard',
       description: 'View and manage dashboard analytics',
-      enabled: true,
+      enabled: false,
       permissions: {
-        add: true,
-        view: true,
+        add: false,
+        view: false,
         edit: false,
         delete: false
       }
@@ -21,11 +26,11 @@ const EditRolesPermissionsModal = ({ isOpen, onClose, userName = 'Priya Sharma',
       id: 2,
       name: 'Vendors',
       description: 'Manage vendor information and relationships',
-      enabled: true,
+      enabled: false,
       permissions: {
-        add: true,
-        view: true,
-        edit: true,
+        add: false,
+        view: false,
+        edit: false,
         delete: false
       }
     },
@@ -45,11 +50,11 @@ const EditRolesPermissionsModal = ({ isOpen, onClose, userName = 'Priya Sharma',
       id: 4,
       name: 'Drivers',
       description: 'Manage driver information and assignments',
-      enabled: true,
+      enabled: false,
       permissions: {
-        add: true,
-        view: true,
-        edit: true,
+        add: false,
+        view: false,
+        edit: false,
         delete: false
       }
     },
@@ -57,12 +62,12 @@ const EditRolesPermissionsModal = ({ isOpen, onClose, userName = 'Priya Sharma',
       id: 5,
       name: 'Suppliers',
       description: 'Manage supplier relationships and inventory',
-      enabled: true,
+      enabled: false,
       permissions: {
-        add: true,
-        view: true,
-        edit: true,
-        delete: true
+        add: false,
+        view: false,
+        edit: false,
+        delete: false
       }
     },
     {
@@ -81,28 +86,40 @@ const EditRolesPermissionsModal = ({ isOpen, onClose, userName = 'Priya Sharma',
       id: 7,
       name: 'Labour',
       description: 'Manage labour workforce and attendance',
-      enabled: true,
+      enabled: false,
       permissions: {
-        add: true,
-        view: true,
-        edit: true,
+        add: false,
+        view: false,
+        edit: false,
         delete: false
       }
     },
     {
       id: 8,
-      name: 'Orders',
-      description: 'Process and track orders from customers',
-      enabled: true,
+      name: 'Add Product',
+      description: 'Add new products to the system',
+      enabled: false,
       permissions: {
         add: false,
-        view: true,
-        edit: true,
+        view: false,
+        edit: false,
         delete: false
       }
     },
     {
       id: 9,
+      name: 'Orders',
+      description: 'Process and track orders from customers',
+      enabled: false,
+      permissions: {
+        add: false,
+        view: false,
+        edit: false,
+        delete: false
+      }
+    },
+    {
+      id: 10,
       name: 'Order Assign',
       description: 'Assign and manage order allocations',
       enabled: false,
@@ -114,7 +131,19 @@ const EditRolesPermissionsModal = ({ isOpen, onClose, userName = 'Priya Sharma',
       }
     },
     {
-      id: 10,
+      id: 11,
+      name: 'Stock Management',
+      description: 'Manage inventory and stock levels',
+      enabled: false,
+      permissions: {
+        add: false,
+        view: false,
+        edit: false,
+        delete: false
+      }
+    },
+    {
+      id: 12,
       name: 'Payouts',
       description: 'Manage payment processing and disbursements',
       enabled: false,
@@ -126,19 +155,19 @@ const EditRolesPermissionsModal = ({ isOpen, onClose, userName = 'Priya Sharma',
       }
     },
     {
-      id: 11,
+      id: 13,
       name: 'Reports',
       description: 'Generate and view system reports',
-      enabled: true,
+      enabled: false,
       permissions: {
         add: false,
-        view: true,
+        view: false,
         edit: false,
         delete: false
       }
     },
     {
-      id: 12,
+      id: 14,
       name: 'Roles And Permission',
       description: 'Manage user roles and access permissions',
       enabled: false,
@@ -150,19 +179,19 @@ const EditRolesPermissionsModal = ({ isOpen, onClose, userName = 'Priya Sharma',
       }
     },
     {
-      id: 13,
+      id: 15,
       name: 'Notification',
       description: 'Manage system notifications and alerts',
-      enabled: true,
+      enabled: false,
       permissions: {
-        add: true,
-        view: true,
+        add: false,
+        view: false,
         edit: false,
-        delete: true
+        delete: false
       }
     },
     {
-      id: 14,
+      id: 16,
       name: 'Settings',
       description: 'Configure system settings and preferences',
       enabled: false,
@@ -338,10 +367,32 @@ const EditRolesPermissionsModal = ({ isOpen, onClose, userName = 'Priya Sharma',
               Cancel
             </button>
             <button
-              onClick={onClose}
-              className="px-5 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium"
+              onClick={async () => {
+                setLoading(true);
+                try {
+                  const permissionsData = {};
+                  modules.forEach(module => {
+                    const moduleName = module.name.toLowerCase().replace(/ /g, '_');
+                    permissionsData[`${moduleName}_enabled`] = module.enabled;
+                    if (module.enabled) {
+                      permissionsData[`${moduleName}_add`] = module.permissions.add;
+                      permissionsData[`${moduleName}_view`] = module.permissions.view;
+                      permissionsData[`${moduleName}_edit`] = module.permissions.edit;
+                      permissionsData[`${moduleName}_delete`] = module.permissions.delete;
+                    }
+                  });
+                  await updateRolesPermissions(userId, permissionsData);
+                  onClose();
+                } catch (error) {
+                  console.error('Failed to update permissions:', error);
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              disabled={loading}
+              className="px-5 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Save Changes
+              {loading ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </div>
@@ -351,59 +402,69 @@ const EditRolesPermissionsModal = ({ isOpen, onClose, userName = 'Priya Sharma',
 };
 
 // ===== ROLES & PERMISSION MANAGEMENT PAGE COMPONENT =====
-const RolesPermissionPage = ({ onEditPermissions }) => {
+const RolesPermissionPage = ({ onEditPermissions, onAddAdmin, onEditAdmin, onDeleteAdmin, users, loading }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [openDropdown, setOpenDropdown] = useState(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+  const dropdownRef = useRef(null);
 
-  const users = [
-    {
-      id: 1,
-      name: 'Rajesh Kumar',
-      initials: 'RK',
-      email: 'rajesh.kumar@veggichain.com',
-      role: 'Admin',
-      status: 'Active',
-      lastActive: '2 hours ago'
-    },
-    {
-      id: 2,
-      name: 'Priya Sharma',
-      initials: 'PS',
-      email: 'priya.sharma@veggichain.com',
-      role: 'Supervisor',
-      status: 'Active',
-      lastActive: '5 hours ago'
-    },
-    {
-      id: 3,
-      name: 'Arun Mehta',
-      initials: 'AM',
-      email: 'arun.mehta@veggichain.com',
-      role: 'Accountant',
-      status: 'Active',
-      lastActive: '1 day ago'
-    },
-    {
-      id: 4,
-      name: 'Sneha Kapoor',
-      initials: 'SK',
-      email: 'sneha.kapoor@veggichain.com',
-      role: 'Manager',
-      status: 'Inactive',
-      lastActive: '3 hours ago'
-    },
-    {
-      id: 5,
-      name: 'Vijay Gupta',
-      initials: 'VG',
-      email: 'vijay.gupta@veggichain.com',
-      role: 'Warehouse Staff',
-      status: 'Active',
-      lastActive: '6 hours ago'
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const toggleDropdown = (userId, event) => {
+    if (openDropdown === userId) {
+      setOpenDropdown(null);
+    } else {
+      const rect = event.currentTarget.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.right + window.scrollX - 160
+      });
+      setOpenDropdown(userId);
     }
-  ];
+  };
+
+  const handleAction = (action, user) => {
+    if (action === 'permissions') {
+      onEditPermissions(user);
+    } else if (action === 'edit') {
+      onEditAdmin(user);
+    } else if (action === 'delete') {
+      onDeleteAdmin(user);
+    }
+    setOpenDropdown(null);
+  };
+
+  const filteredUsers = users.filter(user =>
+    user.role?.toLowerCase() !== 'superadmin' &&
+    (user.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.role?.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8 relative">
+      {/* Header with Add Admin Button */}
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-[#0D5C4D]">Roles & Permissions</h1>
+        <button
+          onClick={onAddAdmin}
+          className="px-4 py-2 bg-[#0D7C66] text-white rounded-lg hover:bg-[#0a6354] transition-colors font-medium text-sm flex items-center gap-2"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          Add Admin
+        </button>
+      </div>
+
       {/* Search Bar */}
       <div className="relative mb-6">
         <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#6B8782]" size={20} />
@@ -430,9 +491,21 @@ const RolesPermissionPage = ({ onEditPermissions }) => {
               </tr>
             </thead>
             <tbody>
-              {users.map((user, index) => (
+              {loading ? (
+                <tr>
+                  <td colSpan="5" className="px-6 py-8 text-center text-[#6B8782]">
+                    Loading admins...
+                  </td>
+                </tr>
+              ) : filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="px-6 py-8 text-center text-[#6B8782]">
+                    No admins found
+                  </td>
+                </tr>
+              ) : filteredUsers.map((user, index) => (
                 <tr 
-                  key={user.id} 
+                  key={user.aid} 
                   className={`border-b border-[#D0E0DB] hover:bg-[#F0F4F3] transition-colors ${
                     index % 2 === 0 ? 'bg-white' : 'bg-[#F0F4F3]/30'
                   }`}
@@ -440,11 +513,11 @@ const RolesPermissionPage = ({ onEditPermissions }) => {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-[#B8F4D8] flex items-center justify-center text-[#0D5C4D] font-semibold text-sm">
-                        {user.initials}
+                        {user.username?.substring(0, 2).toUpperCase()}
                       </div>
                       <div>
-                        <div className="font-semibold text-[#0D5C4D]">{user.name}</div>
-                        <div className="text-xs text-[#6B8782]">Last active: {user.lastActive}</div>
+                        <div className="font-semibold text-[#0D5C4D]">{user.username}</div>
+                        <div className="text-xs text-[#6B8782]">ID: {user.aid}</div>
                       </div>
                     </div>
                   </td>
@@ -452,24 +525,25 @@ const RolesPermissionPage = ({ onEditPermissions }) => {
                     <div className="text-sm text-[#0D5C4D]">{user.email}</div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="px-3 py-1.5 rounded-full text-xs font-medium bg-[#D4F4E8] text-[#047857]">
+                    <span className="px-3 py-1.5 rounded-full text-xs font-medium bg-[#D4F4E8] text-[#047857] capitalize">
                       {user.role}
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1 w-fit ${
-                      user.status === 'Active' ? 'bg-[#4ED39A] text-white' : 'bg-red-500 text-white'
-                    }`}>
+                    <span className="px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1 w-fit bg-[#4ED39A] text-white">
                       <div className="w-2 h-2 rounded-full bg-white"></div>
-                      {user.status}
+                      Active
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     <button 
-                      onClick={() => onEditPermissions(user)}
-                      className="px-4 py-2 bg-[#0D7C66] text-white rounded-lg hover:bg-[#0a6354] transition-colors font-medium text-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleDropdown(user.aid, e);
+                      }}
+                      className="text-[#6B8782] hover:text-[#0D5C4D] transition-colors p-1 hover:bg-[#F0F4F3] rounded"
                     >
-                      Roles & Permission
+                      <MoreVertical size={20} />
                     </button>
                   </td>
                 </tr>
@@ -481,7 +555,7 @@ const RolesPermissionPage = ({ onEditPermissions }) => {
         {/* Pagination */}
         <div className="flex items-center justify-between px-6 py-4 bg-[#F0F4F3] border-t border-[#D0E0DB]">
           <div className="text-sm text-[#6B8782]">
-            Showing 5 of 248 users
+            Showing {filteredUsers.length} of {users.length} users
           </div>
           <div className="flex items-center gap-2">
             <button className="px-3 py-2 text-[#6B8782] hover:bg-[#D0E0DB] rounded-lg transition-colors">
@@ -502,6 +576,42 @@ const RolesPermissionPage = ({ onEditPermissions }) => {
           </div>
         </div>
       </div>
+
+      {/* Dropdown Menu */}
+      {openDropdown && (
+        <div 
+          ref={dropdownRef}
+          className="fixed w-40 bg-white rounded-lg shadow-lg border border-[#D0E0DB] py-1 z-[100]"
+          style={{ 
+            top: `${dropdownPosition.top}px`, 
+            left: `${dropdownPosition.left}px` 
+          }}
+        >
+          {users.find(u => u.aid === openDropdown)?.role?.toLowerCase() !== 'superadmin' && (
+            <button
+              onClick={() => handleAction('permissions', users.find(u => u.aid === openDropdown))}
+              className="w-full text-left px-4 py-2 text-sm text-[#0D5C4D] hover:bg-[#F0F4F3] transition-colors flex items-center gap-2"
+            >
+              <Shield size={14} />
+              Permissions
+            </button>
+          )}
+          <button
+            onClick={() => handleAction('edit', users.find(u => u.aid === openDropdown))}
+            className="w-full text-left px-4 py-2 text-sm text-[#0D5C4D] hover:bg-[#F0F4F3] transition-colors flex items-center gap-2"
+          >
+            <Edit2 size={14} />
+            Edit
+          </button>
+          <button
+            onClick={() => handleAction('delete', users.find(u => u.aid === openDropdown))}
+            className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-[#F0F4F3] transition-colors flex items-center gap-2"
+          >
+            <Trash2 size={14} />
+            Delete
+          </button>
+        </div>
+      )}
     </div>
   );
 };
@@ -510,6 +620,27 @@ const RolesPermissionPage = ({ onEditPermissions }) => {
 const RolesPermissionSystem = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [isAddAdminOpen, setIsAddAdminOpen] = useState(false);
+  const [isEditAdminOpen, setIsEditAdminOpen] = useState(false);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, name: '' });
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchAdmins();
+  }, []);
+
+  const fetchAdmins = async () => {
+    try {
+      setLoading(true);
+      const response = await getAllAdmins();
+      setUsers(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch admins:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleEditPermissions = (user) => {
     setSelectedUser(user);
@@ -521,15 +652,73 @@ const RolesPermissionSystem = () => {
     setSelectedUser(null);
   };
 
+  const handleAddAdmin = () => {
+    fetchAdmins();
+  };
+
+  const handleEditAdmin = (user) => {
+    setSelectedUser(user);
+    setIsEditAdminOpen(true);
+  };
+
+  const handleUpdateAdmin = () => {
+    fetchAdmins();
+  };
+
+  const handleDeleteAdmin = (user) => {
+    setDeleteModal({ isOpen: true, id: user.aid, name: user.username });
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await deleteAdmin(deleteModal.id);
+      fetchAdmins();
+      setDeleteModal({ isOpen: false, id: null, name: '' });
+    } catch (error) {
+      console.error('Failed to delete admin:', error);
+    }
+  };
+
   return (
     <>
-      <RolesPermissionPage onEditPermissions={handleEditPermissions} />
+      <RolesPermissionPage 
+        onEditPermissions={handleEditPermissions}
+        onAddAdmin={() => setIsAddAdminOpen(true)}
+        onEditAdmin={handleEditAdmin}
+        onDeleteAdmin={handleDeleteAdmin}
+        users={users}
+        loading={loading}
+      />
       
       <EditRolesPermissionsModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        userName={selectedUser?.name}
+        userName={selectedUser?.username}
         userRole={selectedUser?.role}
+        userId={selectedUser?.aid}
+      />
+
+      {isAddAdminOpen && (
+        <AddAdmin
+          onClose={() => setIsAddAdminOpen(false)}
+          onAdd={handleAddAdmin}
+        />
+      )}
+
+      {isEditAdminOpen && (
+        <EditAdmin
+          onClose={() => setIsEditAdminOpen(false)}
+          onUpdate={handleUpdateAdmin}
+          admin={selectedUser}
+        />
+      )}
+
+      <ConfirmDeleteModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, id: null, name: '' })}
+        onConfirm={confirmDelete}
+        title="Delete Admin"
+        message={`Are you sure you want to delete "${deleteModal.name}"? This action cannot be undone.`}
       />
     </>
   );

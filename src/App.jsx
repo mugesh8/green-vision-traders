@@ -33,6 +33,24 @@ import AddDriver from './components/admin/pages/AddDriver'
 import EditDriver from './components/admin/pages/EditDriver'
 import DriverDetails from './components/admin/pages/DriverDetails'
 import DriverAirportDelivery from './components/admin/pages/DriverAirportDelivery'
+import DriverLocalPickups from './components/admin/pages/DriverLocalPickups'
+import AddFuelExpenses from './components/admin/pages/AddFuelExpenses'
+import AddExcessKM from './components/admin/pages/AddExcessKM'
+import AddAdvancePay from './components/admin/pages/AddAdvancePay'
+import FuelExpenseManagement from './components/admin/pages/FuelExpenseManagement'
+import ViewFuelExpense from './components/admin/pages/ViewFuelExpense'
+import EditFuelExpense from './components/admin/pages/EditFuelExpense'
+import ExcessKMManagement from './components/admin/pages/ExcessKMManagement'
+import ViewExcessKM from './components/admin/pages/ViewExcessKM'
+import EditExcessKM from './components/admin/pages/EditExcessKM'
+import AdvancePayManagement from './components/admin/pages/AdvancePayManagement'
+import ViewAdvancePay from './components/admin/pages/ViewAdvancePay'
+import EditAdvancePay from './components/admin/pages/EditAdvancePay'
+import RemarksManagement from './components/admin/pages/RemarksManagement'
+import AddRemarks from './components/admin/pages/AddRemarks'
+import ViewRemarks from './components/admin/pages/ViewRemarks'
+import EditRemarks from './components/admin/pages/EditRemarks'
+import DailyPayout from './components/admin/pages/DailyPayout'
 import PayoutManagement from './components/admin/pages/PayoutManagement'
 import PayoutLabour from './components/admin/pages/PayoutLabour'
 import PayoutDriver from './components/admin/pages/PayoutDriver'
@@ -42,7 +60,11 @@ import LabourAdd from './components/admin/pages/LabourAdd'
 import LabourEdit from './components/admin/pages/LabourEdit'
 import LabourDetails from './components/admin/pages/LabourDetails'
 import LabourAttendance from './components/admin/pages/LabourAttendance'
-import LabourWorkAssignment from './components/admin/pages/LabourWorkAssignment'
+import LabourDailyPayout from './components/admin/pages/LabourDailyPayout'
+import LabourExcessPayManagement from './components/admin/pages/LabourExcessPayManagement'
+import AddLabourExcessPay from './components/admin/pages/AddLabourExcessPay'
+import EditLabourExcessPay from './components/admin/pages/EditLabourExcessPay'
+import DriveAttendance from './components/admin/pages/DriveAttendance'
 import ReportManagement from './components/admin/pages/ReportManagement'
 import ReportFarmer from './components/admin/pages/ReportFarmer'
 import ReportLabour from './components/admin/pages/ReportLabour'
@@ -52,9 +74,13 @@ import ReportOrder from './components/admin/pages/ReportOrder'
 import AddProduct from './components/admin/pages/AddProduct'
 import OrderManagementList from './components/admin/pages/OrderManagement'
 import OrderCreate from './components/admin/pages/OrderCreate'
+import OrderView from './components/admin/pages/OrderView'
+import PreOrder from './components/admin/pages/PreOrder'
+import PreorderManagement from './components/admin/pages/PreorderManagement'
 import OrderAssignManagement from './components/admin/pages/OrderAssignManagement'
 import OrderAssignCreateStage1 from './components/admin/pages/OrderAssignCreateStage1'
 import OrderAssignCreateStage2 from './components/admin/pages/OrderAssignCreateStage2'
+import OrderAssignCreateStage3 from './components/admin/pages/OrderAssignCreateStage3'
 import StockManagement from './components/admin/pages/StockManagement'
 import StockReassignmentForm from './components/admin/pages/StockReassignmentForm'
 import PackingInventory from './components/admin/pages/PackingInventory'
@@ -96,19 +122,46 @@ const App = () => {
         <Route path="/drivers/add" element={<ProtectedRoute><Layout><AddDriver /></Layout></ProtectedRoute>} />
         <Route path="/drivers/:id/edit" element={<ProtectedRoute><Layout><EditDriver /></Layout></ProtectedRoute>} />
         <Route path="/drivers/:id" element={<ProtectedRoute><Layout><DriverDetails /></Layout></ProtectedRoute>} />
+        <Route path="/drivers/:id/local-pickups" element={<ProtectedRoute><Layout><DriverLocalPickups /></Layout></ProtectedRoute>} />
         <Route path="/drivers/:id/airport" element={<ProtectedRoute><Layout><DriverAirportDelivery /></Layout></ProtectedRoute>} />
+        <Route path="/drivers/:id/fuel-expenses" element={<ProtectedRoute><Layout><AddFuelExpenses /></Layout></ProtectedRoute>} />
+        <Route path="/drivers/:id/excess-km" element={<ProtectedRoute><Layout><AddExcessKM /></Layout></ProtectedRoute>} />
+        <Route path="/drivers/:id/advance-pay" element={<ProtectedRoute><Layout><AddAdvancePay /></Layout></ProtectedRoute>} />
+        <Route path="/fuel-expense-management" element={<ProtectedRoute><Layout><FuelExpenseManagement /></Layout></ProtectedRoute>} />
+        <Route path="/fuel-expenses/view/:id" element={<ProtectedRoute><Layout><ViewFuelExpense /></Layout></ProtectedRoute>} />
+        <Route path="/fuel-expenses/edit/:id" element={<ProtectedRoute><Layout><EditFuelExpense /></Layout></ProtectedRoute>} />
+        <Route path="/excess-km-management" element={<ProtectedRoute><Layout><ExcessKMManagement /></Layout></ProtectedRoute>} />
+        <Route path="/excess-km/view/:id" element={<ProtectedRoute><Layout><ViewExcessKM /></Layout></ProtectedRoute>} />
+        <Route path="/excess-km/edit/:id" element={<ProtectedRoute><Layout><EditExcessKM /></Layout></ProtectedRoute>} />
+        <Route path="/advance-pay-management" element={<ProtectedRoute><Layout><AdvancePayManagement /></Layout></ProtectedRoute>} />
+        <Route path="/advance-pay/view/:id" element={<ProtectedRoute><Layout><ViewAdvancePay /></Layout></ProtectedRoute>} />
+        <Route path="/advance-pay/edit/:id" element={<ProtectedRoute><Layout><EditAdvancePay /></Layout></ProtectedRoute>} />
+        <Route path="/remarks-management" element={<ProtectedRoute><Layout><RemarksManagement /></Layout></ProtectedRoute>} />
+        <Route path="/drivers/:id/remarks" element={<ProtectedRoute><Layout><AddRemarks /></Layout></ProtectedRoute>} />
+        <Route path="/remarks/view/:id" element={<ProtectedRoute><Layout><ViewRemarks /></Layout></ProtectedRoute>} />
+        <Route path="/remarks/edit/:id" element={<ProtectedRoute><Layout><EditRemarks /></Layout></ProtectedRoute>} />
+        <Route path="/drivers/:id/daily-payout" element={<ProtectedRoute><Layout><DailyPayout /></Layout></ProtectedRoute>} />
+        <Route path="/drivers/attendance" element={<ProtectedRoute><Layout><DriveAttendance /></Layout></ProtectedRoute>} />
         <Route path="/labour" element={<ProtectedRoute><Layout><LabourManagement /></Layout></ProtectedRoute>} />
         <Route path="/labour/add" element={<ProtectedRoute><Layout><LabourAdd /></Layout></ProtectedRoute>} />
         <Route path="/labour/:id/edit" element={<ProtectedRoute><Layout><LabourEdit /></Layout></ProtectedRoute>} />
-        <Route path="/labour/:id" element={<ProtectedRoute><Layout><LabourDetails /></Layout></ProtectedRoute>} />
         <Route path="/labour/attendance" element={<ProtectedRoute><Layout><LabourAttendance /></Layout></ProtectedRoute>} />
-        <Route path="/labour/work-assignment" element={<ProtectedRoute><Layout><LabourWorkAssignment /></Layout></ProtectedRoute>} />
+        <Route path="/labour/excess-pay" element={<ProtectedRoute><Layout><LabourExcessPayManagement /></Layout></ProtectedRoute>} />
+        <Route path="/labour/excess-pay/add" element={<ProtectedRoute><Layout><AddLabourExcessPay /></Layout></ProtectedRoute>} />
+        <Route path="/labour/excess-pay/:id/edit" element={<ProtectedRoute><Layout><EditLabourExcessPay /></Layout></ProtectedRoute>} />
+        <Route path="/labour/:id" element={<ProtectedRoute><Layout><LabourDetails /></Layout></ProtectedRoute>} />
+        <Route path="/labour/daily-payout" element={<ProtectedRoute><Layout><LabourDailyPayout /></Layout></ProtectedRoute>} />
         <Route path="/products/add" element={<ProtectedRoute><Layout><AddProduct /></Layout></ProtectedRoute>} />
         <Route path="/orders" element={<ProtectedRoute><Layout><OrderManagementList /></Layout></ProtectedRoute>} />
         <Route path="/orders/create" element={<ProtectedRoute><Layout><OrderCreate /></Layout></ProtectedRoute>} />
+        <Route path="/orders/:id" element={<ProtectedRoute><Layout><OrderView /></Layout></ProtectedRoute>} />
+        <Route path="/preorders/:id" element={<ProtectedRoute><Layout><PreOrder /></Layout></ProtectedRoute>} />
+        <Route path="/drafts/:id" element={<ProtectedRoute><Layout><OrderView /></Layout></ProtectedRoute>} />
+        <Route path="/preorders" element={<ProtectedRoute><Layout><PreorderManagement /></Layout></ProtectedRoute>} />
         <Route path="/order-assign" element={<ProtectedRoute><Layout><OrderAssignManagement /></Layout></ProtectedRoute>} />
         <Route path="/order-assign/stage1/:id" element={<ProtectedRoute><Layout><OrderAssignCreateStage1 /></Layout></ProtectedRoute>} />
         <Route path="/order-assign/stage2/:id" element={<ProtectedRoute><Layout><OrderAssignCreateStage2 /></Layout></ProtectedRoute>} />
+        <Route path="/order-assign/stage3/:id" element={<ProtectedRoute><Layout><OrderAssignCreateStage3 /></Layout></ProtectedRoute>} />
         <Route path="/stock" element={<ProtectedRoute><Layout><StockManagement /></Layout></ProtectedRoute>} />
         <Route path="/stock/:id" element={<ProtectedRoute><Layout><StockReassignmentForm /></Layout></ProtectedRoute>} />
         <Route path="/payouts" element={<ProtectedRoute><Layout><PayoutManagement /></Layout></ProtectedRoute>} />

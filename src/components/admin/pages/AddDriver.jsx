@@ -15,6 +15,7 @@ const AddDriver = () => {
     pinCode: '',
     password: '',
     licenseNumber: '',
+    licenseExpiry: '',
     availableVehicle: '',
     vehicleType: '',
     vehicleNumber: '',
@@ -22,14 +23,21 @@ const AddDriver = () => {
     insuranceNumber: '',
     insuranceExpiry: '',
     vehicleCondition: 'Good',
+    pollutionCertificate: '',
+    pollutionCertificateExpiry: '',
+    kaPermit: '',
+    kaPermitExpiry: '',
     deliveryType: 'collection',
     isActive: true
   });
 
   const [showPassword, setShowPassword] = useState(false);
-  const [profileImage, setProfileImage] = useState(null);
+  const [driverImage, setDriverImage] = useState(null);
   const [licenseImage, setLicenseImage] = useState(null);
   const [idProof, setIdProof] = useState(null);
+  const [insuranceDoc, setInsuranceDoc] = useState(null);
+  const [pollutionDoc, setPollutionDoc] = useState(null);
+  const [kaPermitDoc, setKaPermitDoc] = useState(null);
   const [vehicleTypes, setVehicleTypes] = useState([
     'tata-ace',
     'mahindra-bolero', 
@@ -68,11 +76,17 @@ const AddDriver = () => {
     const file = event.target.files[0];
     if (file) {
       if (type === 'profile') {
-        setProfileImage(file);
+        setDriverImage(file);
       } else if (type === 'license') {
         setLicenseImage(file);
-      } else {
+      } else if (type === 'idProof') {
         setIdProof(file);
+      } else if (type === 'insurance') {
+        setInsuranceDoc(file);
+      } else if (type === 'pollution') {
+        setPollutionDoc(file);
+      } else if (type === 'kaPermit') {
+        setKaPermitDoc(file);
       }
     }
   };
@@ -86,27 +100,35 @@ const AddDriver = () => {
       
       formDataToSend.append('driver_name', formData.driverName);
       formDataToSend.append('phone_number', formData.phoneNumber);
-      formDataToSend.append('email', formData.email);
-      formDataToSend.append('address', formData.address);
-      formDataToSend.append('city', formData.city);
-      formDataToSend.append('state', formData.state);
-      formDataToSend.append('pin_code', formData.pinCode);
-      formDataToSend.append('password', formData.password);
+      if (formData.email) formDataToSend.append('email', formData.email);
+      if (formData.address) formDataToSend.append('address', formData.address);
+      if (formData.city) formDataToSend.append('city', formData.city);
+      if (formData.state) formDataToSend.append('state', formData.state);
+      if (formData.pinCode) formDataToSend.append('pin_code', formData.pinCode);
+      if (formData.password) formDataToSend.append('password', formData.password);
       formDataToSend.append('license_number', formData.licenseNumber);
-      formDataToSend.append('vehicle_type', formData.availableVehicle);
-      formDataToSend.append('vehicle_ownership', formData.vehicleType);
+      if (formData.licenseExpiry) formDataToSend.append('license_expiry_date', formData.licenseExpiry);
+      if (formData.vehicleType) formDataToSend.append('vehicle_type', formData.vehicleType);
+      formDataToSend.append('available_vehicle', formData.availableVehicle);
       formDataToSend.append('vehicle_number', formData.vehicleNumber);
       formDataToSend.append('capacity', formData.capacity);
-      formDataToSend.append('insurance_number', formData.insuranceNumber);
-      formDataToSend.append('insurance_expiry_date', formData.insuranceExpiry);
+      if (formData.insuranceNumber) formDataToSend.append('insurance_number', formData.insuranceNumber);
+      if (formData.insuranceExpiry) formDataToSend.append('insurance_expiry_date', formData.insuranceExpiry);
       formDataToSend.append('vehicle_condition', formData.vehicleCondition);
+      if (formData.pollutionCertificate) formDataToSend.append('pollution_certificate', formData.pollutionCertificate);
+      if (formData.pollutionCertificateExpiry) formDataToSend.append('pollution_certificate_expiry_date', formData.pollutionCertificateExpiry);
+      if (formData.kaPermit) formDataToSend.append('ka_permit', formData.kaPermit);
+      if (formData.kaPermitExpiry) formDataToSend.append('ka_permit_expiry_date', formData.kaPermitExpiry);
       formDataToSend.append('delivery_type', formData.deliveryType === 'collection' ? 'Local Pickups' : 
                            formData.deliveryType === 'airport' ? 'Line Airport' : 'Both Types');
       formDataToSend.append('status', formData.isActive ? 'Available' : 'Inactive');
       
-      if (profileImage) formDataToSend.append('profile_image', profileImage);
-      if (licenseImage) formDataToSend.append('driver_image', licenseImage);
+      if (driverImage) formDataToSend.append('driver_image', driverImage);
+      if (licenseImage) formDataToSend.append('license_image', licenseImage);
       if (idProof) formDataToSend.append('driver_id_proof', idProof);
+      if (insuranceDoc) formDataToSend.append('insurance_doc', insuranceDoc);
+      if (pollutionDoc) formDataToSend.append('pollution_doc', pollutionDoc);
+      if (kaPermitDoc) formDataToSend.append('ka_permit_doc', kaPermitDoc);
       
       await createDriver(formDataToSend);
       navigate('/drivers');
@@ -291,6 +313,22 @@ const AddDriver = () => {
               </div>
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+              {/* License Expiry Date */}
+              <div>
+                <label className="block text-sm text-gray-700 mb-2">
+                  License Expiry Date
+                </label>
+                <input
+                  type="date"
+                  name="licenseExpiry"
+                  value={formData.licenseExpiry}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                />
+              </div>
+            </div>
+
             {/* File Uploads */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Upload Profile Image */}
@@ -322,9 +360,9 @@ const AddDriver = () => {
                     >
                       Upload Image
                     </button>
-                    {profileImage ? (
+                    {driverImage ? (
                       <p className="text-xs text-green-600 mt-2 font-medium">
-                        ✓ {profileImage.name}
+                        ✓ {driverImage.name}
                       </p>
                     ) : (
                       <p className="text-xs text-gray-500 mt-2">
@@ -346,7 +384,6 @@ const AddDriver = () => {
                       type="file"
                       id="licenseUpload"
                       onChange={(e) => handleFileUpload('license', e)}
-                      accept=".jpg,.jpeg,.png,.gif"
                       className="hidden"
                     />
                     <label
@@ -362,7 +399,7 @@ const AddDriver = () => {
                       onClick={() => document.getElementById('licenseUpload').click()}
                       className="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                     >
-                      Upload Image
+                      Upload File
                     </button>
                     {licenseImage ? (
                       <p className="text-xs text-green-600 mt-2 font-medium">
@@ -370,7 +407,7 @@ const AddDriver = () => {
                       </p>
                     ) : (
                       <p className="text-xs text-gray-500 mt-2">
-                        Upload a license image: JPG, PNG or GIF. Max 2MB.
+                        Upload license document: All formats. Max 20MB.
                       </p>
                     )}
                   </div>
@@ -388,7 +425,6 @@ const AddDriver = () => {
                       type="file"
                       id="idProofUpload"
                       onChange={(e) => handleFileUpload('idProof', e)}
-                      accept=".jpg,.jpeg,.png,.gif"
                       className="hidden"
                     />
                     <label
@@ -404,7 +440,7 @@ const AddDriver = () => {
                       onClick={() => document.getElementById('idProofUpload').click()}
                       className="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                     >
-                      Upload Image
+                      Upload File
                     </button>
                     {idProof ? (
                       <p className="text-xs text-green-600 mt-2 font-medium">
@@ -412,7 +448,136 @@ const AddDriver = () => {
                       </p>
                     ) : (
                       <p className="text-xs text-gray-500 mt-2">
-                        Upload an ID proof: JPG, PNG or GIF. Max 2MB.
+                        Upload ID proof: All formats. Max 20MB.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Additional Document Uploads */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+              {/* Upload Insurance Document */}
+              <div>
+                <label className="block text-sm text-gray-700 mb-2">
+                  Upload Insurance Document
+                </label>
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <input
+                      type="file"
+                      id="insuranceDocUpload"
+                      onChange={(e) => handleFileUpload('insurance', e)}
+                      accept=".jpg,.jpeg,.png,.gif,.pdf"
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="insuranceDocUpload"
+                      className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors"
+                    >
+                      <Upload className="w-6 h-6 text-gray-600" />
+                    </label>
+                  </div>
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('insuranceDocUpload').click()}
+                      className="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      Upload File
+                    </button>
+                    {insuranceDoc ? (
+                      <p className="text-xs text-green-600 mt-2 font-medium">
+                        ✓ {insuranceDoc.name}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-gray-500 mt-2">
+                        Upload insurance doc: JPG, PNG, GIF or PDF. Max 5MB.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Upload Pollution Certificate Document */}
+              <div>
+                <label className="block text-sm text-gray-700 mb-2">
+                  Upload Pollution Certificate
+                </label>
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <input
+                      type="file"
+                      id="pollutionDocUpload"
+                      onChange={(e) => handleFileUpload('pollution', e)}
+                      accept=".jpg,.jpeg,.png,.gif,.pdf"
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="pollutionDocUpload"
+                      className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors"
+                    >
+                      <Upload className="w-6 h-6 text-gray-600" />
+                    </label>
+                  </div>
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('pollutionDocUpload').click()}
+                      className="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      Upload File
+                    </button>
+                    {pollutionDoc ? (
+                      <p className="text-xs text-green-600 mt-2 font-medium">
+                        ✓ {pollutionDoc.name}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-gray-500 mt-2">
+                        Upload pollution cert: JPG, PNG, GIF or PDF. Max 5MB.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Upload KA Permit Document */}
+              <div>
+                <label className="block text-sm text-gray-700 mb-2">
+                  Upload KA Permit Document
+                </label>
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <input
+                      type="file"
+                      id="kaPermitDocUpload"
+                      onChange={(e) => handleFileUpload('kaPermit', e)}
+                      accept=".jpg,.jpeg,.png,.gif,.pdf"
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="kaPermitDocUpload"
+                      className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors"
+                    >
+                      <Upload className="w-6 h-6 text-gray-600" />
+                    </label>
+                  </div>
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('kaPermitDocUpload').click()}
+                      className="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      Upload File
+                    </button>
+                    {kaPermitDoc ? (
+                      <p className="text-xs text-green-600 mt-2 font-medium">
+                        ✓ {kaPermitDoc.name}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-gray-500 mt-2">
+                        Upload KA permit: JPG, PNG, GIF or PDF. Max 5MB.
                       </p>
                     )}
                   </div>
@@ -536,7 +701,7 @@ const AddDriver = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               {/* Insurance Number */}
               <div>
                 <label className="block text-sm text-gray-700 mb-2">
@@ -558,11 +723,10 @@ const AddDriver = () => {
                   Insurance Expiry Date
                 </label>
                 <input
-                  type="text"
+                  type="date"
                   name="insuranceExpiry"
                   value={formData.insuranceExpiry}
                   onChange={handleInputChange}
-                  placeholder="DD/MM/YYYY"
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
                 />
               </div>
@@ -586,6 +750,66 @@ const AddDriver = () => {
                   </select>
                   <ChevronRight className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none rotate-90" />
                 </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Pollution Certificate */}
+              <div>
+                <label className="block text-sm text-gray-700 mb-2">
+                  Pollution Certificate
+                </label>
+                <input
+                  type="text"
+                  name="pollutionCertificate"
+                  value={formData.pollutionCertificate}
+                  onChange={handleInputChange}
+                  placeholder="Enter pollution certificate number"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                />
+              </div>
+
+              {/* Pollution Certificate Expiry Date */}
+              <div>
+                <label className="block text-sm text-gray-700 mb-2">
+                  Pollution Certificate Expiry Date
+                </label>
+                <input
+                  type="date"
+                  name="pollutionCertificateExpiry"
+                  value={formData.pollutionCertificateExpiry}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                />
+              </div>
+
+              {/* KA Permit */}
+              <div>
+                <label className="block text-sm text-gray-700 mb-2">
+                  KA Permit
+                </label>
+                <input
+                  type="text"
+                  name="kaPermit"
+                  value={formData.kaPermit}
+                  onChange={handleInputChange}
+                  placeholder="Enter KA permit number"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                />
+              </div>
+
+              {/* KA Permit Expiry Date */}
+              <div>
+                <label className="block text-sm text-gray-700 mb-2">
+                  KA Permit Expiry Date
+                </label>
+                <input
+                  type="date"
+                  name="kaPermitExpiry"
+                  value={formData.kaPermitExpiry}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                />
               </div>
             </div>
           </div>
@@ -670,25 +894,20 @@ const AddDriver = () => {
 
           {/* Footer Actions */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-gray-200">
-            {/* Driver Status Toggle */}
+            {/* Driver Status */}
             <div className="flex items-center gap-3">
               <span className="text-sm text-gray-700 font-medium">Driver Status</span>
-              <button
-                type="button"
-                onClick={() => setFormData(prev => ({ ...prev, isActive: !prev.isActive }))}
-                className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
-                  formData.isActive ? 'bg-teal-600' : 'bg-gray-300'
-                }`}
+              <select
+                name="status"
+                value={formData.isActive ? 'Available' : 'Inactive'}
+                onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.value === 'Available' }))}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
               >
-                <span
-                  className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
-                    formData.isActive ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-              <span className={`text-sm font-medium ${formData.isActive ? 'text-teal-600' : 'text-gray-500'}`}>
-                {formData.isActive ? 'Active' : 'Inactive'}
-              </span>
+                <option value="Available">Available</option>
+                <option value="On Trip">On Trip</option>
+                <option value="Break">Break</option>
+                <option value="Inactive">Inactive</option>
+              </select>
             </div>
 
             {/* Action Buttons */}

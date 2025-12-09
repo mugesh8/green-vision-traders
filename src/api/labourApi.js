@@ -11,9 +11,9 @@ export const createLabour = async (labourData) => {
   }
 };
 
-export const getAllLabours = async () => {
+export const getAllLabours = async (page = 1, limit = 10) => {
   try {
-    const response = await api.get('/labour/list');
+    const response = await api.get(`/labour/list?page=${page}&limit=${limit}`);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;

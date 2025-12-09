@@ -72,6 +72,7 @@ const DriverManagement = () => {
           phone: driver.phone_number || driver.phone,
           initial: (driver.driver_name || driver.name) ? (driver.driver_name || driver.name).split(' ').map(n => n[0]).join('').toUpperCase() : 'D',
           color: 'bg-teal-700',
+          profileImage: driver.driver_image,
           vehicle: { 
             name: driver.vehicle_type || driver.vehicleType, 
             number: driver.vehicle_number || driver.vehicleNumber, 
@@ -158,9 +159,11 @@ const DriverManagement = () => {
       case 'Available':
         return 'bg-emerald-100 text-emerald-700';
       case 'On Trip':
-        return 'bg-red-100 text-red-700';
+        return 'bg-blue-100 text-blue-700';
       case 'Break':
         return 'bg-amber-100 text-amber-700';
+      case 'Inactive':
+        return 'bg-red-100 text-red-700';
       default:
         return 'bg-gray-100 text-gray-700';
     }
@@ -171,9 +174,11 @@ const DriverManagement = () => {
       case 'Available':
         return 'bg-emerald-500';
       case 'On Trip':
-        return 'bg-red-500';
+        return 'bg-blue-500';
       case 'Break':
         return 'bg-amber-500';
+      case 'Inactive':
+        return 'bg-red-500';
       default:
         return 'bg-gray-500';
     }
@@ -202,16 +207,10 @@ const DriverManagement = () => {
             All Drivers
           </button>
           <button
-            onClick={() => navigate('/drivers/DRV-001')}
+            onClick={() => navigate('/drivers/attendance')}
             className="px-5 py-2.5 rounded-lg font-medium transition-all text-sm bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
           >
-            Local Pickup Drivers
-          </button>
-          <button
-            onClick={() => navigate('/drivers/DRV-001/airport')}
-            className="px-5 py-2.5 rounded-lg font-medium transition-all text-sm bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
-          >
-            Line Airport
+            Attendance
           </button>
         </div>
 
@@ -267,6 +266,7 @@ const DriverManagement = () => {
                       <option>Available</option>
                       <option>On Trip</option>
                       <option>Break</option>
+                      <option>Inactive</option>
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#6B8782] pointer-events-none" />
                   </div>
@@ -312,7 +312,18 @@ const DriverManagement = () => {
                     <tr key={index} className={`border-b border-[#D0E0DB] hover:bg-[#F0F4F3] transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-[#F0F4F3]/30'}`}>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-[#B8F4D8] flex items-center justify-center text-[#0D5C4D] font-semibold text-sm">
+                          {driver.profileImage ? (
+                            <img 
+                              src={`${import.meta.env.VITE_API_BASE_URL.replace('/api/v1', '')}${driver.profileImage}`} 
+                              alt={driver.name}
+                              className="w-10 h-10 rounded-full object-cover"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
+                              }}
+                            />
+                          ) : null}
+                          <div className="w-10 h-10 rounded-full bg-[#B8F4D8] flex items-center justify-center text-[#0D5C4D] font-semibold text-sm" style={{ display: driver.profileImage ? 'none' : 'flex' }}>
                             {driver.initial}
                           </div>
                           <div>

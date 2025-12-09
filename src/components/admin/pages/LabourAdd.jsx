@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, Calendar } from 'lucide-react';
+import { Camera, Calendar, ArrowLeft } from 'lucide-react';
 import { createLabour } from '../../../api/labourApi';
 
 const AddLabour = () => {
@@ -16,7 +16,8 @@ const AddLabour = () => {
     address: '',
     department: '',
     dailyWage: '',
-    joiningDate: ''
+    joiningDate: '',
+    status: 'Active'
   });
 
   const [photoPreview, setPhotoPreview] = useState(null);
@@ -56,9 +57,10 @@ const AddLabour = () => {
       formDataToSend.append('gender', formData.gender.charAt(0).toUpperCase() + formData.gender.slice(1));
       formDataToSend.append('blood_group', formData.bloodGroup);
       formDataToSend.append('address', formData.address);
-      formDataToSend.append('department', formData.department.charAt(0).toUpperCase() + formData.department.slice(1));
+      formDataToSend.append('department', formData.department);
       formDataToSend.append('daily_wage', formData.dailyWage);
       formDataToSend.append('joining_date', formData.joiningDate);
+      formDataToSend.append('status', formData.status === 'Inactive' ? 'InActive' : formData.status);
       
       if (profileImage) formDataToSend.append('profile_image', profileImage);
       
@@ -79,10 +81,15 @@ const AddLabour = () => {
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-[#0D5C4D] mb-1">Add Labour</h1>
-        <p className="text-sm text-[#6B8782]">Add new labour to the system</p>
-      </div>
+       <div className="flex items-center gap-4 mb-6">
+                <button
+                  onClick={() => navigate('/labour')}
+                  className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                  <span className="font-medium">Back to Labour Management</span>
+                </button>
+              </div>
 
       {/* Form Container */}
       <div className="bg-white rounded-2xl border border-[#D0E0DB] p-6 sm:p-8">
@@ -304,10 +311,9 @@ const AddLabour = () => {
                     required
                   >
                     <option value="">Select department</option>
-                    <option value="packing">Packing</option>
-                    <option value="loading">Loading</option>
-                    <option value="unloading">Unloading</option>
-                    <option value="sorting">Sorting</option>
+                    <option value="Packing">Packing</option>
+                    <option value="Loading">Loading</option>
+                    <option value="Unloading">Unloading</option>
                   </select>
                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
                     <svg className="w-4 h-4 text-[#6B8782]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -315,7 +321,7 @@ const AddLabour = () => {
                     </svg>
                   </div>
                 </div>
-                <p className="text-xs text-red-500 mt-1 italic">* Packing or Loading/Unloading department</p>
+
               </div>
 
               {/* Daily Wage */}
@@ -355,6 +361,30 @@ const AddLabour = () => {
                     required
                   />
                   <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#6B8782] pointer-events-none" size={18} />
+                </div>
+              </div>
+
+              {/* Status */}
+              <div>
+                <label className="block text-sm font-medium text-[#0D5C4D] mb-2">
+                  Status <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <select
+                    name="status"
+                    value={formData.status}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2.5 bg-white border border-[#D0E0DB] rounded-lg text-[#0D5C4D] focus:outline-none focus:ring-2 focus:ring-[#0D8568] focus:border-transparent appearance-none cursor-pointer"
+                    required
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                    <svg className="w-4 h-4 text-[#6B8782]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </div>
               </div>
             </div>

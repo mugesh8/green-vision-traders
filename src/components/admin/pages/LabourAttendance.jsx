@@ -1,156 +1,106 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Calendar, ChevronDown } from 'lucide-react';
+import { getAllAttendance, markPresent, markCheckOut, markAbsent } from '../../../api/labourAttendanceApi';
+import { getAllLabours } from '../../../api/labourApi';
 
 const LabourAttendance = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('attendance');
-  const [selectedDate, setSelectedDate] = useState('Today, Nov 06 2025');
-  const [filters, setFilters] = useState({
-    status: 'All',
-    workType: 'All'
-  });
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [filters, setFilters] = useState({ status: 'All' });
   const [searchQuery, setSearchQuery] = useState('');
+  const [stats, setStats] = useState({
+    totalRegistered: 0,
+    present: 0,
+    absent: 0,
+    halfDay: 0,
+    notMarked: 0
+  });
+  const [labours, setLabours] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const stats = [
-    { 
-      label: 'Total Registered', 
-      value: '142', 
-      color: 'bg-gradient-to-r from-[#D1FAE5] to-[#A7F3D0]',
-      textColor: 'text-[#0D5C4D]'
-    },
-    { 
-      label: 'Present', 
-      value: '28', 
-      color: 'bg-gradient-to-r from-[#6EE7B7] to-[#34D399]',
-      textColor: 'text-[#0D5C4D]'
-    },
-    { 
-      label: 'Absent', 
-      value: '45', 
-      color: 'bg-gradient-to-r from-[#6EE7B7] to-[#34D399]',
-      textColor: 'text-[#0D5C4D]'
-    },
-    { 
-      label: 'Not Marked Yet', 
-      value: '18', 
-      color: 'bg-gradient-to-r from-[#047857] to-[#065F46]',
-      textColor: 'text-white'
-    }
-  ];
+  useEffect(() => {
+    fetchData();
+  }, [selectedDate, filters]);
 
-  const labours = [
-    {
-      id: 1,
-      name: 'Rajesh Murugan',
-      labourId: 'LAB-001',
-      phone: '+91 98765 43210',
-      avatar: 'RM',
-      avatarBg: 'bg-teal-700',
-      workType: 'Packing',
-      workTypeBg: 'bg-blue-100',
-      workTypeText: 'text-blue-700',
-      checkIn: '06:15 AM',
-      checkOut: '--:-- --',
-      status: 'Present',
-      statusColor: 'bg-[#10B981]',
-      action: 'checkout'
-    },
-    {
-      id: 2,
-      name: 'Senthil Kumar',
-      labourId: 'LAB-002',
-      phone: '+91 98765 43211',
-      avatar: 'SK',
-      avatarBg: 'bg-teal-800',
-      workType: 'Loading',
-      workTypeBg: 'bg-yellow-100',
-      workTypeText: 'text-yellow-700',
-      checkIn: '06:00 AM',
-      checkOut: '02:30 PM',
-      status: 'Present',
-      statusColor: 'bg-[#10B981]',
-      action: 'completed'
-    },
-    {
-      id: 3,
-      name: 'Anitha Prabhu',
-      labourId: 'LAB-003',
-      phone: '+91 98765 43212',
-      avatar: 'AP',
-      avatarBg: 'bg-teal-600',
-      workType: 'Packing',
-      workTypeBg: 'bg-blue-100',
-      workTypeText: 'text-blue-700',
-      checkIn: '--:-- --',
-      checkOut: '--:-- --',
-      status: 'Absent',
-      statusColor: 'bg-red-500',
-      action: 'markPresent'
-    },
-    {
-      id: 4,
-      name: 'Muthu Vel',
-      labourId: 'LAB-004',
-      phone: '+91 98765 43213',
-      avatar: 'MV',
-      avatarBg: 'bg-teal-700',
-      workType: 'Unloading',
-      workTypeBg: 'bg-yellow-100',
-      workTypeText: 'text-yellow-700',
-      checkIn: '06:45 AM',
-      checkOut: '--:-- --',
-      status: 'Present',
-      statusColor: 'bg-[#10B981]',
-      action: 'checkout'
-    },
-    {
-      id: 5,
-      name: 'Lakshmi Priya',
-      labourId: 'LAB-005',
-      phone: '+91 98765 43214',
-      avatar: 'LP',
-      avatarBg: 'bg-teal-700',
-      workType: 'Packing',
-      workTypeBg: 'bg-blue-100',
-      workTypeText: 'text-blue-700',
-      checkIn: '07:00 AM',
-      checkOut: '--:-- --',
-      status: 'Present',
-      statusColor: 'bg-[#10B981]',
-      action: 'checkout'
-    },
-    {
-      id: 6,
-      name: 'Kumar Selvam',
-      labourId: 'LAB-006',
-      phone: '+91 98765 43215',
-      avatar: 'KS',
-      avatarBg: 'bg-teal-800',
-      workType: 'Loading',
-      workTypeBg: 'bg-yellow-100',
-      workTypeText: 'text-yellow-700',
-      checkIn: '11:30 AM',
-      checkOut: '--:-- --',
-      status: 'Half Day',
-      statusColor: 'bg-orange-500',
-      action: 'checkout'
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const attendanceRes = await getAllAttendance({ date: selectedDate, status: filters.status });
+
+      setStats(attendanceRes.data.stats);
+      
+      const mergedData = attendanceRes.data.labours.map(labour => ({
+        id: labour.lid,
+        name: labour.full_name,
+        labourId: labour.labour_id,
+        phone: labour.mobile_number,
+        department: labour.department,
+        checkIn: labour.check_in_time || '--:-- --',
+        checkOut: labour.check_out_time || '--:-- --',
+        status: labour.attendance_status,
+        attendanceId: labour.attendance_id
+      }));
+
+      setLabours(mergedData);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     if (tab === 'labourList') {
-      navigate('/labours');
-    } else if (tab === 'workAssignment') {
-      navigate('/labours/work-assignment');
+      navigate('/labour');
+    } else if (tab === 'excessPay') {
+      navigate('/labour/excess-pay');
+    } else if (tab === 'dailyPayout') {
+      navigate('/labour/daily-payout');
     }
   };
 
-  const handleAction = (action, labourId) => {
-    console.log(`${action} for labour ${labourId}`);
-    // Add your action logic here
+  const handleAction = async (action, labourId) => {
+    try {
+      if (action === 'checkout') {
+        const currentTime = new Date().toLocaleTimeString('en-US', { 
+          hour12: false, 
+          hour: '2-digit', 
+          minute: '2-digit',
+          second: '2-digit'
+        });
+        await markCheckOut(labourId, { time: currentTime, date: selectedDate });
+      } else if (action === 'markPresent') {
+        await markPresent(labourId, { date: selectedDate });
+      } else if (action === 'markAbsent') {
+        await markAbsent(labourId, { date: selectedDate });
+      }
+      await fetchData();
+    } catch (error) {
+      console.error('Error marking attendance:', error);
+      alert('Failed to mark attendance. Please try again.');
+    }
   };
+
+  const getInitials = (name) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'Present': return 'bg-[#10B981]';
+      case 'Absent': return 'bg-red-500';
+      case 'Half Day': return 'bg-orange-500';
+      default: return 'bg-gray-400';
+    }
+  };
+
+  const filteredLabours = labours.filter(labour => 
+    labour.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    labour.labourId.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -178,28 +128,45 @@ const LabourAttendance = () => {
           Attendance
         </button>
         <button
-          onClick={() => handleTabChange('workAssignment')}
+          onClick={() => handleTabChange('excessPay')}
           className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-colors ${
-            activeTab === 'workAssignment'
+            activeTab === 'excessPay'
               ? 'bg-[#10B981] text-white'
               : 'bg-[#D4F4E8] text-[#0D5C4D] hover:bg-[#B8F4D8]'
           }`}
         >
-          Work Assignment
+          Excess Pay
+        </button>
+        <button
+          onClick={() => handleTabChange('dailyPayout')}
+          className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-colors ${
+            activeTab === 'dailyPayout'
+              ? 'bg-[#10B981] text-white'
+              : 'bg-[#D4F4E8] text-[#0D5C4D] hover:bg-[#B8F4D8]'
+          }`}
+        >
+          Labour Daily Payout
         </button>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
-        {stats.map((stat, index) => (
-          <div 
-            key={index} 
-            className={`${stat.color} rounded-2xl p-6 ${stat.textColor}`}
-          >
-            <div className="text-sm font-medium mb-2 opacity-90">{stat.label}</div>
-            <div className="text-3xl sm:text-4xl font-bold">{stat.value}</div>
-          </div>
-        ))}
+        <div className="bg-gradient-to-r from-[#D1FAE5] to-[#A7F3D0] rounded-2xl p-6 text-[#0D5C4D]">
+          <div className="text-sm font-medium mb-2 opacity-90">Total Registered</div>
+          <div className="text-3xl sm:text-4xl font-bold">{stats.totalRegistered}</div>
+        </div>
+        <div className="bg-gradient-to-r from-[#6EE7B7] to-[#34D399] rounded-2xl p-6 text-[#0D5C4D]">
+          <div className="text-sm font-medium mb-2 opacity-90">Present</div>
+          <div className="text-3xl sm:text-4xl font-bold">{stats.present}</div>
+        </div>
+        <div className="bg-gradient-to-r from-[#6EE7B7] to-[#34D399] rounded-2xl p-6 text-[#0D5C4D]">
+          <div className="text-sm font-medium mb-2 opacity-90">Absent</div>
+          <div className="text-3xl sm:text-4xl font-bold">{stats.absent}</div>
+        </div>
+        <div className="bg-gradient-to-r from-[#047857] to-[#065F46] rounded-2xl p-6 text-white">
+          <div className="text-sm font-medium mb-2 opacity-90">Not Marked Yet</div>
+          <div className="text-3xl sm:text-4xl font-bold">{stats.notMarked}</div>
+        </div>
       </div>
 
       {/* Filters and Search */}
@@ -226,32 +193,18 @@ const LabourAttendance = () => {
             <option value="All">Status: All</option>
             <option value="Present">Present</option>
             <option value="Absent">Absent</option>
-            <option value="Half Day">Half Day</option>
-          </select>
-          <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#6B8782] pointer-events-none" size={16} />
-        </div>
-
-        {/* Work Type Filter */}
-        <div className="relative">
-          <select
-            value={filters.workType}
-            onChange={(e) => setFilters({...filters, workType: e.target.value})}
-            className="appearance-none bg-white border border-[#D0E0DB] rounded-lg px-4 py-2.5 pr-10 text-sm text-[#0D5C4D] focus:outline-none focus:ring-2 focus:ring-[#0D8568] cursor-pointer min-w-[150px]"
-          >
-            <option value="All">Work Type: All</option>
-            <option value="Packing">Packing</option>
-            <option value="Loading">Loading</option>
-            <option value="Unloading">Unloading</option>
           </select>
           <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#6B8782] pointer-events-none" size={16} />
         </div>
 
         {/* Date Picker */}
         <div className="relative">
-          <button className="bg-white border border-[#D0E0DB] rounded-lg px-4 py-2.5 text-sm text-[#0D5C4D] focus:outline-none focus:ring-2 focus:ring-[#0D8568] flex items-center gap-2 min-w-[180px]">
-            <Calendar size={16} className="text-red-500" />
-            {selectedDate}
-          </button>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="bg-white border border-[#D0E0DB] rounded-lg px-4 py-2.5 text-sm text-[#0D5C4D] focus:outline-none focus:ring-2 focus:ring-[#0D8568] min-w-[180px]"
+          />
         </div>
       </div>
 
@@ -262,7 +215,6 @@ const LabourAttendance = () => {
             <thead>
               <tr className="bg-[#D4F4E8]">
                 <th className="px-4 sm:px-6 py-4 text-left text-xs sm:text-sm font-semibold text-[#0D5C4D]">LABOUR INFO</th>
-                <th className="px-4 sm:px-6 py-4 text-left text-xs sm:text-sm font-semibold text-[#0D5C4D]">WORK TYPE</th>
                 <th className="px-4 sm:px-6 py-4 text-left text-xs sm:text-sm font-semibold text-[#0D5C4D]">CHECK-IN TIME</th>
                 <th className="px-4 sm:px-6 py-4 text-left text-xs sm:text-sm font-semibold text-[#0D5C4D]">CHECK-OUT TIME</th>
                 <th className="px-4 sm:px-6 py-4 text-left text-xs sm:text-sm font-semibold text-[#0D5C4D]">STATUS</th>
@@ -270,7 +222,19 @@ const LabourAttendance = () => {
               </tr>
             </thead>
             <tbody>
-              {labours.map((labour, index) => (
+              {loading ? (
+                <tr>
+                  <td colSpan="5" className="px-6 py-8 text-center text-[#6B8782]">
+                    Loading...
+                  </td>
+                </tr>
+              ) : filteredLabours.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="px-6 py-8 text-center text-[#6B8782]">
+                    No labours found
+                  </td>
+                </tr>
+              ) : filteredLabours.map((labour, index) => (
                 <tr 
                   key={labour.id} 
                   className={`border-b border-[#D0E0DB] hover:bg-[#F0F4F3] transition-colors ${
@@ -279,20 +243,14 @@ const LabourAttendance = () => {
                 >
                   <td className="px-4 sm:px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-full ${labour.avatarBg} flex items-center justify-center text-white font-semibold text-sm flex-shrink-0`}>
-                        {labour.avatar}
+                      <div className="w-10 h-10 rounded-full bg-teal-700 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                        {getInitials(labour.name)}
                       </div>
                       <div>
                         <div className="text-sm font-semibold text-[#0D5C4D]">{labour.name}</div>
                         <div className="text-xs text-[#6B8782]">{labour.labourId} • {labour.phone}</div>
                       </div>
                     </div>
-                  </td>
-
-                  <td className="px-4 sm:px-6 py-4">
-                    <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${labour.workTypeBg} ${labour.workTypeText}`}>
-                      {labour.workType}
-                    </span>
                   </td>
 
                   <td className="px-4 sm:px-6 py-4">
@@ -308,37 +266,48 @@ const LabourAttendance = () => {
                   </td>
 
                   <td className="px-4 sm:px-6 py-4">
-                    <span className={`px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 w-fit text-white ${labour.statusColor}`}>
+                    <span className={`px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 w-fit text-white ${getStatusColor(labour.status)}`}>
                       <div className="w-2 h-2 rounded-full bg-white"></div>
                       {labour.status}
                     </span>
                   </td>
 
                   <td className="px-4 sm:px-6 py-4">
-                    {labour.action === 'checkout' && (
-                      <button
-                        onClick={() => handleAction('checkout', labour.id)}
-                        className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-medium transition-colors"
-                      >
-                        Mark Checkout
-                      </button>
-                    )}
-                    {labour.action === 'completed' && (
-                      <button
-                        className="px-4 py-2 bg-[#E5E7EB] text-[#6B8782] rounded-lg text-xs font-medium cursor-not-allowed"
-                        disabled
-                      >
-                        Completed
-                      </button>
-                    )}
-                    {labour.action === 'markPresent' && (
+                    <div className="flex gap-2">
                       <button
                         onClick={() => handleAction('markPresent', labour.id)}
-                        className="px-4 py-2 bg-[#10B981] hover:bg-[#059669] text-white rounded-lg text-xs font-medium transition-colors"
+                        disabled={labour.status === 'Present' || labour.status === 'Absent' || labour.checkOut !== '--:-- --'}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                          labour.status === 'Present' || labour.status === 'Absent' || labour.checkOut !== '--:-- --'
+                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            : 'bg-[#10B981] hover:bg-[#059669] text-white'
+                        }`}
                       >
-                        Mark Present
+                        Present
                       </button>
-                    )}
+                      <button
+                        onClick={() => handleAction('checkout', labour.id)}
+                        disabled={labour.checkIn === '--:-- --' || labour.checkOut !== '--:-- --'}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                          labour.checkIn === '--:-- --' || labour.checkOut !== '--:-- --'
+                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            : 'bg-red-500 hover:bg-red-600 text-white'
+                        }`}
+                      >
+                        Checkout
+                      </button>
+                      <button
+                        onClick={() => handleAction('markAbsent', labour.id)}
+                        disabled={labour.status === 'Absent' || labour.status === 'Present' || labour.checkOut !== '--:-- --'}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                          labour.status === 'Absent' || labour.status === 'Present' || labour.checkOut !== '--:-- --'
+                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            : 'bg-orange-500 hover:bg-orange-600 text-white'
+                        }`}
+                      >
+                        Absent
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -349,21 +318,7 @@ const LabourAttendance = () => {
         {/* Pagination */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 sm:px-6 py-4 bg-[#F0F4F3] border-t border-[#D0E0DB]">
           <div className="text-sm text-[#6B8782]">
-            Showing 1-6 of 128 labours
-          </div>
-          <div className="flex items-center gap-1 sm:gap-2">
-            <button className="px-3 py-2 text-[#6B8782] hover:bg-[#D0E0DB] rounded-lg transition-colors">
-              &lt;
-            </button>
-            <button className="px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors bg-[#0D7C66] text-white">
-              1
-            </button>
-            <button className="px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors text-[#6B8782] hover:bg-[#D0E0DB]">
-              2
-            </button>
-            <button className="px-3 py-2 text-[#6B8782] hover:bg-[#D0E0DB] rounded-lg transition-colors">
-              &gt;
-            </button>
+            Showing {filteredLabours.length} of {labours.length} labours
           </div>
         </div>
       </div>

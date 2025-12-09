@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ChevronDown, MoreVertical, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, ChevronDown, MoreVertical, ChevronLeft, ChevronRight, Eye, Edit, Trash2 } from 'lucide-react';
+import { getAllOrders, deleteOrder, getAllDrafts, deleteDraft } from '../../../api/orderApi'; // Import the order and draft APIs
+import ConfirmDeleteModal from '../../common/ConfirmDeleteModal'; // Import the confirm delete modal
 
 const OrderManagement = () => {
   const navigate = useNavigate();
@@ -9,87 +11,362 @@ const OrderManagement = () => {
   const [timeFilter, setTimeFilter] = useState('All Time');
   const [statusFilter, setStatusFilter] = useState('All Status');
   const [productFilter, setProductFilter] = useState('Product Type');
+  const [showTimeFilter, setShowTimeFilter] = useState(false);
+  const [showStatusFilter, setShowStatusFilter] = useState(false);
+  const [showProductFilter, setShowProductFilter] = useState(false);
+  
+  // Filter options
+  const timeFilterOptions = ['All Time', 'Today', 'Yesterday', 'Last 7 Days', 'Last 30 Days', 'This Month', 'Last Month'];
+  const statusFilterOptions = ['All Status', 'Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
+  const productFilterOptions = ['Product Type', 'Tomato', 'Potato', 'Onion', 'Carrot', 'Cabbage', 'Capsicum'];
+  const [orders, setOrders] = useState([]); // State for orders
+  const [drafts, setDrafts] = useState([]); // State for drafts
+  const [filteredOrders, setFilteredOrders] = useState([]); // State for filtered orders
+  const [filteredDrafts, setFilteredDrafts] = useState([]); // State for filtered drafts
+  const [activeTab, setActiveTab] = useState(() => {
+    // Check URL parameters to determine initial tab
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('tab') === 'drafts' ? 'drafts' : 'orders';
+  }); // Tab state for orders/drafts
+  const [loading, setLoading] = useState(true); // Loading state
+  const [error, setError] = useState(null); // Error state
+  const [openDropdown, setOpenDropdown] = useState(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+  const dropdownRef = useRef(null);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, orderId: null });
+  const [deleteDraftModal, setDeleteDraftModal] = useState({ isOpen: false, draftId: null });
+
+  // Fetch orders when component mounts
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        const response = await getAllOrders();
+        if (response.success) {
+          // Transform the data to match the existing structure
+          const transformedOrders = response.data.map(order => ({
+            id: order.oid,
+            customer: order.customer_name,
+            boxes: order.items[0]?.num_boxes || 'N/A',
+            packing: order.items.map(item => item.packing_type).filter(Boolean)[0] || 'N/A',
+            netWeight: order.items.reduce((sum, item) => sum + (parseFloat(item.net_weight) || 0), 0) + ' kg',
+            grossWeight: order.items.reduce((sum, item) => sum + (parseFloat(item.gross_weight) || 0), 0) + ' kg',
+            total: '₹' + order.items.reduce((sum, item) => sum + (parseFloat(item.total_price) || 0), 0).toLocaleString(),
+            marketPrice: '₹' + (order.items[0]?.market_price || '0'),
+            status: order.order_status || 'pending',
+            products: order.items.map(item => item.product).filter(Boolean),
+            createdAt: order.createdAt,
+            updatedAt: order.updatedAt
+          }));
+          setOrders(transformedOrders);
+        } else {
+          setError('Failed to fetch orders');
+        }
+      } catch (err) {
+        setError('Error fetching orders: ' + err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
+
+  // Fetch drafts from backend
+  const fetchDrafts = async () => {
+    try {
+      const response = await getAllDrafts();
+      if (response.success) {
+        const draftData = response.data.map(draft => {
+          // Calculate values similar to how orders are calculated
+          const products = draft.draft_data?.products || [];
+                
+          // Get values from first product if available, otherwise default to 'N/A'
+          const firstProduct = products[0];
+                
+          return {
+            id: draft.did,
+            customer: draft.customer_name || 'Unnamed Customer',
+            boxes: firstProduct?.numBoxes || 'N/A',
+            packing: firstProduct?.packingType || 'N/A',
+            netWeight: firstProduct?.netWeight ? firstProduct.netWeight + ' kg' : 'N/A',
+            grossWeight: firstProduct?.grossWeight ? firstProduct.grossWeight + ' kg' : 'N/A',
+            total: '₹' + (parseFloat(draft.total_amount) || 0).toLocaleString(),
+            marketPrice: firstProduct?.marketPrice ? '₹' + firstProduct.marketPrice : 'N/A',
+            products: products.map(p => p.productName).filter(Boolean),
+            createdAt: draft.createdAt,
+            updatedAt: draft.updatedAt
+          };
+        });
+        setDrafts(draftData);
+      }
+    } catch (err) {
+      console.error('Error fetching drafts:', err);
+    }
+  };
+
+  // Fetch drafts when component mounts and when activeTab changes
+  useEffect(() => {
+    if (activeTab === 'drafts') {
+      fetchDrafts();
+    }
+  }, [activeTab]);
+
+  // Periodically refresh drafts when on the drafts tab
+  useEffect(() => {
+    let intervalId;
+    if (activeTab === 'drafts') {
+      intervalId = setInterval(() => {
+        fetchDrafts();
+      }, 5000); // Refresh every 5 seconds
+    }
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [activeTab]);
+
+  // Refresh drafts when window gains focus
+  useEffect(() => {
+    const handleWindowFocus = () => {
+      if (activeTab === 'drafts') {
+        fetchDrafts();
+      }
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+    return () => {
+      window.removeEventListener('focus', handleWindowFocus);
+    };
+  }, [activeTab]);
+
+  // Filter the orders and drafts based on filters and search query
+  useEffect(() => {
+    // Filter orders
+    let filtered = [...orders];
+    
+    // Apply time filter
+    filtered = filterByDateRange(filtered, timeFilter);
+    
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(order => 
+        order.id.toLowerCase().includes(query) ||
+        order.customer.toLowerCase().includes(query)
+      );
+    }
+    
+    // Apply status filter
+    if (statusFilter !== 'All Status') {
+      const statusValue = statusFilter.toLowerCase();
+      filtered = filtered.filter(order => 
+        order.status && order.status.toLowerCase() === statusValue
+      );
+    }
+    
+    // Apply product filter
+    if (productFilter !== 'Product Type') {
+      filtered = filtered.filter(order => 
+        order.products && order.products.includes(productFilter)
+      );
+    }
+    
+    setFilteredOrders(filtered);
+    
+    // Filter drafts
+    let filteredDraftData = [...drafts];
+    
+    // Apply search filter to drafts
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filteredDraftData = filteredDraftData.filter(draft => 
+        draft.id.toLowerCase().includes(query) ||
+        draft.customer.toLowerCase().includes(query)
+      );
+    }
+    
+    // Apply product filter to drafts
+    if (productFilter !== 'Product Type') {
+      filteredDraftData = filteredDraftData.filter(draft => 
+        draft.products && draft.products.includes(productFilter)
+      );
+    }
+    
+    setFilteredDrafts(filteredDraftData);
+  }, [orders, drafts, searchQuery, statusFilter, productFilter]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setOpenDropdown(null);
+      }
+      
+      // Close filter dropdowns when clicking outside
+      if (showTimeFilter || showStatusFilter || showProductFilter) {
+        const timeFilterButton = event.target.closest('[data-filter="time"]');
+        const statusFilterButton = event.target.closest('[data-filter="status"]');
+        const productFilterButton = event.target.closest('[data-filter="product"]');
+        
+        if (!timeFilterButton && !statusFilterButton && !productFilterButton) {
+          setShowTimeFilter(false);
+          setShowStatusFilter(false);
+          setShowProductFilter(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showTimeFilter, showStatusFilter, showProductFilter]);
+
+  const toggleDropdown = (orderId, event) => {
+    if (openDropdown === orderId) {
+      setOpenDropdown(null);
+    } else {
+      const rect = event.currentTarget.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.right + window.scrollX - 128 // 128px is dropdown width (w-32)
+      });
+      setOpenDropdown(orderId);
+    }
+  };
+
+  const handleDeleteOrder = async (orderId) => {
+    try {
+      await deleteOrder(orderId);
+      // Refresh the orders list after deletion
+      const response = await getAllOrders();
+      if (response.success) {
+        const transformedOrders = response.data.map(order => ({
+          id: order.oid,
+          customer: order.customer_name,
+          boxes: order.items[0]?.num_boxes || 'N/A',
+          packing: order.items.map(item => item.packing_type).filter(Boolean)[0] || 'N/A',
+          netWeight: order.items.reduce((sum, item) => sum + (parseFloat(item.net_weight) || 0), 0) + ' kg',
+          grossWeight: order.items.reduce((sum, item) => sum + (parseFloat(item.gross_weight) || 0), 0) + ' kg',
+          total: '₹' + order.items.reduce((sum, item) => sum + (parseFloat(item.total_price) || 0), 0).toLocaleString(),
+          marketPrice: '₹' + (order.items[0]?.market_price || '0'),
+          status: order.order_status || 'pending',
+          products: order.items.map(item => item.product).filter(Boolean),
+          createdAt: order.createdAt,
+          updatedAt: order.updatedAt
+        }));
+        setOrders(transformedOrders);
+      }
+    } catch (err) {
+      console.error('Error deleting order:', err);
+      setError('Error deleting order: ' + err.message);
+    }
+    setOpenDropdown(null);
+  };
+
+  const handleDeleteDraft = async (draftId) => {
+    try {
+      await deleteDraft(draftId);
+      // Refresh the drafts list after deletion
+      await fetchDrafts();
+      alert('Draft deleted successfully!');
+    } catch (err) {
+      console.error('Error deleting draft:', err);
+      alert('Error deleting draft: ' + err.message);
+    }
+    setOpenDropdown(null);
+  };
+
+  const handleAction = (action, orderId) => {
+    if (action === 'view') {
+      navigate(`/orders/${orderId}`);
+    } else if (action === 'edit') {
+      // Navigate to the order creation page with order ID for editing
+      navigate(`/orders/create?orderId=${orderId}`);
+    } else if (action === 'delete') {
+      // Open delete confirmation modal
+      setDeleteModal({ isOpen: true, orderId });
+    }
+    setOpenDropdown(null);
+  };
+
+  // Helper function to filter by date range
+  const filterByDateRange = (orders, timeFilter) => {
+    if (timeFilter === 'All Time') return orders;
+    
+    const now = new Date();
+    let startDate = new Date();
+    
+    switch (timeFilter) {
+      case 'Today':
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case 'Yesterday':
+        startDate.setDate(now.getDate() - 1);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case 'Last 7 Days':
+        startDate.setDate(now.getDate() - 7);
+        break;
+      case 'Last 30 Days':
+        startDate.setDate(now.getDate() - 30);
+        break;
+      case 'This Month':
+        startDate.setDate(1);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case 'Last Month':
+        startDate.setMonth(now.getMonth() - 1);
+        startDate.setDate(1);
+        break;
+      default:
+        return orders;
+    }
+    
+    return orders.filter(order => {
+      // Note: We need createdAt/updatedAt fields in order objects for this to work
+      const orderDate = new Date(order.createdAt || order.updatedAt || now);
+      return orderDate >= startDate;
+    });
+  };
+
+  const handleDraftAction = (action, draftId) => {
+    if (action === 'view') {
+      navigate(`/drafts/${draftId}`);
+    } else if (action === 'edit') {
+      // Navigate to the order creation page with draft ID
+      navigate(`/orders/create?draftId=${draftId}`);
+    } else if (action === 'delete') {
+      // Open delete confirmation modal for draft
+      setDeleteDraftModal({ isOpen: true, draftId });
+    }
+    setOpenDropdown(null);
+  };
 
   const statsCards = [
-    { title: 'Total Orders', value: '142', bgColor: 'bg-[#D4F4E8]', textColor: 'text-[#0D7C66]' },
+    { title: 'Total Orders', value: (filteredOrders.length > 0 ? filteredOrders : orders).length, bgColor: 'bg-[#D4F4E8]', textColor: 'text-[#0D7C66]' },
     { title: 'Created', value: '28', bgColor: 'bg-[#B8F3DC]', textColor: 'text-[#0D7C66]' },
     { title: 'Assigned', value: '45', bgColor: 'bg-[#7FE5B8]', textColor: 'text-[#0D7C66]' },
     { title: 'In Transit', value: '51', bgColor: 'bg-[#1CB68B]', textColor: 'text-white' },
     { title: 'Delivered', value: '18', bgColor: 'bg-[#0D7C66]', textColor: 'text-white' },
   ];
 
-  const orders = [
-    {
-      id: 'ORD-1001',
-      customer: 'Fresh Mart Store',
-      boxes: '50 boxes',
-      packing: 'Single Farmer',
-      netWeight: '25 kg',
-      grossWeight: '27 kg',
-      total: '1350 kg',
-      marketPrice: '₹67,500',
-    },
-    {
-      id: 'ORD-1002',
-      customer: 'Organic Valley Store',
-      boxes: '100 bags',
-      packing: 'Red',
-      netWeight: '50 kg',
-      grossWeight: '52 kg',
-      total: '5200 kg',
-      marketPrice: '₹1,56,000',
-    },
-    {
-      id: 'ORD-1003',
-      customer: 'VV Vegie Store',
-      boxes: '75 bags',
-      packing: 'Green',
-      netWeight: '30 kg',
-      grossWeight: '31 kg',
-      total: '2325 kg',
-      marketPrice: '₹69,750',
-    },
-    {
-      id: 'ORD-1004',
-      customer: 'Farm Fresh Retails',
-      boxes: '40 boxes',
-      packing: 'Brown',
-      netWeight: '20 kg',
-      grossWeight: '22 kg',
-      total: '880 kg',
-      marketPrice: '₹52,800',
-    },
-    {
-      id: 'ORD-1005',
-      customer: 'Green Basket Co.',
-      boxes: '60 boxes',
-      packing: 'Red',
-      netWeight: '15 kg',
-      grossWeight: '16 kg',
-      total: '960 kg',
-      marketPrice: '₹28,800',
-    },
-    {
-      id: 'ORD-1006',
-      customer: "Nature's Bounty",
-      boxes: '80 boxes',
-      packing: 'Single Farmer',
-      netWeight: '12 kg',
-      grossWeight: '13 kg',
-      total: '1040 kg',
-      marketPrice: '₹41,600',
-    },
-    {
-      id: 'ORD-1007',
-      customer: 'Urban Green Store',
-      boxes: '30 bags',
-      packing: 'Red',
-      netWeight: '10 kg',
-      grossWeight: '10.5 kg',
-      total: '315 kg',
-      marketPrice: '₹23,625',
-    },
-  ];
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8 flex items-center justify-center">
+        <div className="text-xl">Loading orders...</div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8 flex items-center justify-center">
+        <div className="text-xl text-red-500">Error: {error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
@@ -101,6 +378,22 @@ const OrderManagement = () => {
             className="bg-[#0D7C66] hover:bg-[#0a6252] text-white px-6 py-2.5 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center gap-2 w-full sm:w-auto"
           >
             <span className="text-xl">+</span> New Order
+          </button>
+        </div>
+
+        {/* Tabs for Orders and Drafts */}
+        <div className="flex border-b border-gray-200 mb-6">
+          <button
+            className={`py-2 px-4 font-medium text-sm ${activeTab === 'orders' ? 'text-[#0D7C66] border-b-2 border-[#0D7C66]' : 'text-gray-500 hover:text-gray-700'}`}
+            onClick={() => setActiveTab('orders')}
+          >
+            Orders
+          </button>
+          <button
+            className={`py-2 px-4 font-medium text-sm ${activeTab === 'drafts' ? 'text-[#0D7C66] border-b-2 border-[#0D7C66]' : 'text-gray-500 hover:text-gray-700'}`}
+            onClick={() => setActiveTab('drafts')}
+          >
+            Drafts ({drafts.length})
           </button>
         </div>
 
@@ -117,18 +410,105 @@ const OrderManagement = () => {
             />
           </div>
           <div className="flex flex-wrap gap-3">
-            <button className="flex items-center gap-2 px-4 py-2.5 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors duration-200">
-              <span className="text-gray-700">{timeFilter}</span>
-              <ChevronDown className="w-4 h-4 text-gray-500" />
-            </button>
-            <button className="flex items-center gap-2 px-4 py-2.5 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors duration-200">
-              <span className="text-gray-700">{statusFilter}</span>
-              <ChevronDown className="w-4 h-4 text-gray-500" />
-            </button>
-            <button className="flex items-center gap-2 px-4 py-2.5 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors duration-200">
-              <span className="text-gray-700">{productFilter}</span>
-              <ChevronDown className="w-4 h-4 text-gray-500" />
-            </button>
+            {/* Time Filter Dropdown */}
+            <div className="relative">
+              <button 
+                data-filter="time"
+                onClick={() => {
+                  setShowTimeFilter(!showTimeFilter);
+                  setShowStatusFilter(false);
+                  setShowProductFilter(false);
+                }}
+                className="flex items-center gap-2 px-4 py-2.5 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors duration-200"
+              >
+                <span className="text-gray-700">{timeFilter}</span>
+                <ChevronDown className="w-4 h-4 text-gray-500" />
+              </button>
+              
+              {showTimeFilter && (
+                <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                  {timeFilterOptions.map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => {
+                        setTimeFilter(option);
+                        setShowTimeFilter(false);
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg"
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            {/* Status Filter Dropdown */}
+            <div className="relative">
+              <button 
+                data-filter="status"
+                onClick={() => {
+                  setShowStatusFilter(!showStatusFilter);
+                  setShowTimeFilter(false);
+                  setShowProductFilter(false);
+                }}
+                className="flex items-center gap-2 px-4 py-2.5 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors duration-200"
+              >
+                <span className="text-gray-700">{statusFilter}</span>
+                <ChevronDown className="w-4 h-4 text-gray-500" />
+              </button>
+              
+              {showStatusFilter && (
+                <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                  {statusFilterOptions.map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => {
+                        setStatusFilter(option);
+                        setShowStatusFilter(false);
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg"
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            {/* Product Filter Dropdown */}
+            <div className="relative">
+              <button 
+                data-filter="product"
+                onClick={() => {
+                  setShowProductFilter(!showProductFilter);
+                  setShowTimeFilter(false);
+                  setShowStatusFilter(false);
+                }}
+                className="flex items-center gap-2 px-4 py-2.5 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors duration-200"
+              >
+                <span className="text-gray-700">{productFilter}</span>
+                <ChevronDown className="w-4 h-4 text-gray-500" />
+              </button>
+              
+              {showProductFilter && (
+                <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                  {productFilterOptions.map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => {
+                        setProductFilter(option);
+                        setShowProductFilter(false);
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg"
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            
             <button className="px-6 py-2.5 border border-[#0D7C66] text-[#0D7C66] rounded-lg hover:bg-[#0D7C66] hover:text-white transition-colors duration-200 font-medium">
               Export
             </button>
@@ -151,142 +531,315 @@ const OrderManagement = () => {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D7C66] uppercase tracking-wider">
-                  Order ID
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D7C66] uppercase tracking-wider">
-                  Customer
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D7C66] uppercase tracking-wider">
-                  No of Boxes/Bag
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D7C66] uppercase tracking-wider">
-                  Type of Packing
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D7C66] uppercase tracking-wider">
-                  Net Weight
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D7C66] uppercase tracking-wider">
-                  Gross Weight
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D7C66] uppercase tracking-wider">
-                  Total
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D7C66] uppercase tracking-wider">
-                  Market Prize
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D7C66] uppercase tracking-wider">
-                  Action
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {orders.map((order, index) => (
-                <tr
-                  key={index}
-                  className="hover:bg-gray-50 transition-colors duration-150"
-                >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {order.id}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {order.customer}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {order.boxes}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {order.packing}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {order.netWeight}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {order.grossWeight}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {order.total}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {order.marketPrice}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    <button className="p-1 hover:bg-gray-100 rounded transition-colors duration-150">
-                      <MoreVertical className="w-5 h-5 text-gray-600" />
-                    </button>
-                  </td>
+      {/* Orders Table */}
+      {activeTab === 'orders' && (
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D7C66] uppercase tracking-wider">
+                    Order ID
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D7C66] uppercase tracking-wider">
+                    Customer
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D7C66] uppercase tracking-wider">
+                    No of Boxes/Bag
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D7C66] uppercase tracking-wider">
+                    Type of Packing
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D7C66] uppercase tracking-wider">
+                    Net Weight
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D7C66] uppercase tracking-wider">
+                    Gross Weight
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D7C66] uppercase tracking-wider">
+                    Market Price
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D7C66] uppercase tracking-wider">
+                    Total
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D7C66] uppercase tracking-wider">
+                    Action
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {(filteredOrders.length > 0 ? filteredOrders : orders).map((order, index) => (
+                  <tr
+                    key={index}
+                    className="hover:bg-gray-50 transition-colors duration-150"
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {order.id}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                      {order.customer}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                      {order.boxes}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                      {order.packing}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                      {order.netWeight}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                      {order.grossWeight}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                      {order.marketPrice}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                      {order.total}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleDropdown(order.id, e);
+                        }}
+                        className="text-[#6B8782] hover:text-[#0D5C4D] transition-colors p-1 hover:bg-[#F0F4F3] rounded"
+                      >
+                        <MoreVertical size={20} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-        {/* Pagination */}
-        <div className="px-6 py-4 bg-white border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-gray-600">Showing 6 of 248 Labours</p>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-              className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150"
-            >
-              <ChevronLeft className="w-4 h-4 text-gray-600" />
-            </button>
-            <button
-              className={`px-3 py-1.5 rounded-lg font-medium transition-colors duration-150 ${
-                currentPage === 1
-                  ? 'bg-[#0D7C66] text-white'
-                  : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
-              }`}
-              onClick={() => setCurrentPage(1)}
-            >
-              1
-            </button>
-            <button
-              className={`px-3 py-1.5 rounded-lg font-medium transition-colors duration-150 ${
-                currentPage === 2
-                  ? 'bg-[#0D7C66] text-white'
-                  : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
-              }`}
-              onClick={() => setCurrentPage(2)}
-            >
-              2
-            </button>
-            <span className="px-2 text-gray-500">...</span>
-            <button
-              className={`px-3 py-1.5 rounded-lg font-medium transition-colors duration-150 ${
-                currentPage === 9
-                  ? 'bg-[#0D7C66] text-white'
-                  : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
-              }`}
-              onClick={() => setCurrentPage(9)}
-            >
-              9
-            </button>
-            <button
-              className={`px-3 py-1.5 rounded-lg font-medium transition-colors duration-150 ${
-                currentPage === 10
-                  ? 'bg-[#0D7C66] text-white'
-                  : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
-              }`}
-              onClick={() => setCurrentPage(10)}
-            >
-              10
-            </button>
-            <button
-              onClick={() => setCurrentPage(currentPage + 1)}
-              className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150"
-            >
-              <ChevronRight className="w-4 h-4 text-gray-600" />
-            </button>
+          {/* Pagination */}
+          <div className="px-6 py-4 bg-white border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-sm text-gray-600">Showing {(filteredOrders.length > 0 ? filteredOrders : orders).length} of {orders.length} Orders</p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150"
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="w-4 h-4 text-gray-600" />
+              </button>
+              <button
+                className={`px-3 py-1.5 rounded-lg font-medium transition-colors duration-150 ${
+                  currentPage === 1
+                    ? 'bg-[#0D7C66] text-white'
+                    : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
+                onClick={() => setCurrentPage(1)}
+              >
+                1
+              </button>
+              <button
+                onClick={() => setCurrentPage(currentPage + 1)}
+                className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150"
+                disabled={true}
+              >
+                <ChevronRight className="w-4 h-4 text-gray-600" />
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Drafts Table */}
+      {activeTab === 'drafts' && (
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D7C66] uppercase tracking-wider">
+                    Draft ID
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D7C66] uppercase tracking-wider">
+                    Customer
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D7C66] uppercase tracking-wider">
+                    No of Boxes/Bag
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D7C66] uppercase tracking-wider">
+                    Type of Packing
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D7C66] uppercase tracking-wider">
+                    Net Weight
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D7C66] uppercase tracking-wider">
+                    Gross Weight
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D7C66] uppercase tracking-wider">
+                    Market Price
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D7C66] uppercase tracking-wider">
+                    Total
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D7C66] uppercase tracking-wider">
+                    Action
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {(filteredDrafts.length > 0 ? filteredDrafts : drafts).length > 0 ? (
+                  (filteredDrafts.length > 0 ? filteredDrafts : drafts).map((draft, index) => (
+                    <tr
+                      key={index}
+                      className="hover:bg-gray-50 transition-colors duration-150"
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {draft.id}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        {draft.customer}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        {draft.boxes}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        {draft.packing}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        {draft.netWeight}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        {draft.grossWeight}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        {draft.marketPrice}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        {draft.total}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleDropdown(draft.id, e);
+                          }}
+                          className="text-[#6B8782] hover:text-[#0D5C4D] transition-colors p-1 hover:bg-[#F0F4F3] rounded"
+                        >
+                          <MoreVertical size={20} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="9" className="px-6 py-4 text-center text-sm text-gray-500">
+                      No drafts found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Dropdown Menu - Fixed Position Outside Table */}
+      {openDropdown && (
+        <div 
+          ref={dropdownRef}
+          className="fixed w-32 bg-white rounded-lg shadow-lg border border-[#D0E0DB] py-1 z-[100]"
+          style={{ 
+            top: `${dropdownPosition.top}px`, 
+            left: `${dropdownPosition.left}px` 
+          }}
+        >
+          {activeTab === 'orders' ? (
+            <>
+              <button
+                onClick={() => handleAction('view', openDropdown)}
+                className="w-full text-left px-4 py-2 text-sm text-[#0D5C4D] hover:bg-[#F0F4F3] transition-colors flex items-center gap-2"
+              >
+                <Eye size={14} />
+                View
+              </button>
+              <button
+                onClick={() => navigate(`/preorders/${openDropdown}`)}
+                className="w-full text-left px-4 py-2 text-sm text-[#0D5C4D] hover:bg-[#F0F4F3] transition-colors flex items-center gap-2"
+              >
+                <Eye size={14} />
+                Pre Order
+              </button>
+              <button
+                onClick={() => handleAction('edit', openDropdown)}
+                className="w-full text-left px-4 py-2 text-sm text-[#0D5C4D] hover:bg-[#F0F4F3] transition-colors flex items-center gap-2"
+              >
+                <Edit size={14} />
+                Edit
+              </button>
+              <button
+                onClick={() => handleAction('delete', openDropdown)}
+                className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-[#F0F4F3] transition-colors flex items-center gap-2"
+              >
+                <Trash2 size={14} />
+                Delete
+              </button>
+            </>
+          ) : (
+            <>
+            <button
+                onClick={() => handleDraftAction('view', openDropdown)}
+                className="w-full text-left px-4 py-2 text-sm text-[#0D5C4D] hover:bg-[#F0F4F3] transition-colors flex items-center gap-2"
+              >
+                <Eye size={14} />
+                View
+              </button>
+              <button
+                onClick={() => handleDraftAction('edit', openDropdown)}
+                className="w-full text-left px-4 py-2 text-sm text-[#0D5C4D] hover:bg-[#F0F4F3] transition-colors flex items-center gap-2"
+              >
+                <Edit size={14} />
+                Edit
+              </button>
+              <button
+                onClick={() => handleDraftAction('delete', openDropdown)}
+                className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-[#F0F4F3] transition-colors flex items-center gap-2"
+              >
+                <Trash2 size={14} />
+                Delete
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Delete Order Confirmation Modal */}
+      <ConfirmDeleteModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, orderId: null })}
+        onConfirm={async () => {
+          try {
+            await handleDeleteOrder(deleteModal.orderId);
+            setDeleteModal({ isOpen: false, orderId: null });
+          } catch (error) {
+            console.error('Failed to delete order:', error);
+          }
+        }}
+        title="Delete Order"
+        message="Are you sure you want to delete this order? This action cannot be undone."
+      />
+
+      {/* Delete Draft Confirmation Modal */}
+      <ConfirmDeleteModal
+        isOpen={deleteDraftModal.isOpen}
+        onClose={() => setDeleteDraftModal({ isOpen: false, draftId: null })}
+        onConfirm={async () => {
+          try {
+            await handleDeleteDraft(deleteDraftModal.draftId);
+            setDeleteDraftModal({ isOpen: false, draftId: null });
+          } catch (error) {
+            console.error('Failed to delete draft:', error);
+          }
+        }}
+        title="Delete Draft"
+        message="Are you sure you want to delete this draft? This action cannot be undone."
+      />
     </div>
   );
 };
