@@ -307,7 +307,7 @@ const OrderView = () => {
                                         Net Weight (kg)
                                     </th>
                                     <th className="px-4 py-3 text-left text-xs font-bold text-gray uppercase tracking-wider">
-                                        Gross Weight (kg)   
+                                        Gross Weight (kg)
                                     </th>
                                     <th className="px-4 py-3 text-left text-xs font-bold text-gray uppercase tracking-wider">
                                         Market Price (₹)
@@ -354,35 +354,31 @@ const OrderView = () => {
                     Packing Summary
                 </h2>
 
-                <div className="border rounded-lg overflow-hidden w-1/2">
-                    <table className="w-full">
-                        <thead>
-                            <tr className="bg-emerald-200">
-                                <th className="px-4 py-3 text-left font-bold w-3/4">
-                                    Brown Tape Gross Weight
-                                </th>
-                                <th className="px-4 py-3 text-right font-bold w-1/4">
-                                    {packingSummary.totalGrossWeight} Kg
-                                </th>
-                            </tr>
-                        </thead>
+                <div className="bg-white rounded-2xl overflow-hidden border border-[#D0E0DB] w-1/2">
+                    {/* Header Row - Brown Tape Gross Weight */}
+                    <div className="bg-[#D4F4E8] px-6 py-4 flex justify-between items-center border-b-2 border-[#D0E0DB]">
+                        <span className="text-sm font-semibold text-[#0D5C4D]">Brown Tape Gross Weight</span>
+                        <span className="text-sm font-semibold text-[#0D5C4D]">{packingSummary.totalGrossWeight} Kg</span>
+                    </div>
 
+                    {/* Data Rows */}
+                    <table className="w-full">
                         <tbody>
                             {packingSummary.groups.map((g, idx) => (
-                                <tr key={idx} className="bg-orange-100 border-b">
-                                    <td className="px-4 py-3 text-gray-800">
+                                <tr key={idx} className={`border-b border-[#D0E0DB] ${idx % 2 === 0 ? 'bg-white' : 'bg-[#F0F4F3]/30'}`}>
+                                    <td className="px-6 py-4 text-sm text-[#0D5C4D]">
                                         {g.type}
                                     </td>
-                                    <td className="px-4 py-3 text-gray-800 text-right">
+                                    <td className="px-6 py-4 text-sm text-[#0D5C4D] text-right">
                                         {g.count}
                                     </td>
                                 </tr>
                             ))}
 
                             {/* TOTAL */}
-                            <tr className="bg-emerald-200 font-bold">
-                                <td className="px-4 py-3">Total No. of Pcs</td>
-                                <td className="px-4 py-3 text-right">{packingSummary.totalPcs}</td>
+                            <tr className="bg-[#D4F4E8]">
+                                <td className="px-6 py-4 text-sm font-semibold text-[#0D5C4D]">Total No. of Pcs</td>
+                                <td className="px-6 py-4 text-sm font-semibold text-[#0D5C4D] text-right">{packingSummary.totalPcs}</td>
                             </tr>
                         </tbody>
                     </table>

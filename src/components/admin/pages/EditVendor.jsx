@@ -32,6 +32,7 @@ const EditVendorDetails = () => {
     secondaryPhone: '',
     accountHolderName: '',
     bankName: 'hdfc',
+    branchName: '',
     accountNumber: '',
     ifscCode: '',
   });
@@ -57,6 +58,7 @@ const EditVendorDetails = () => {
       secondaryPhone: '+91 98765 43211',
       accountHolderName: 'Green Fields Farm',
       bankName: 'hdfc',
+      branchName: 'Coimbatore Main',
       accountNumber: '50100123456789',
       ifscCode: 'HDFC0001234',
       vegetables: [
@@ -82,6 +84,7 @@ const EditVendorDetails = () => {
       secondaryPhone: '+91 98765 43212',
       accountHolderName: 'Fresh Vegetable Supply Co.',
       bankName: 'sbi',
+      branchName: 'Kochi Branch',
       accountNumber: '30123456789012',
       ifscCode: 'SBIN0001234',
       vegetables: [
@@ -114,6 +117,7 @@ const EditVendorDetails = () => {
           secondaryPhone: vendor.secondaryPhone,
           accountHolderName: vendor.accountHolderName,
           bankName: vendor.bankName,
+          branchName: vendor.branchName,
           accountNumber: vendor.accountNumber,
           ifscCode: vendor.ifscCode,
         });
@@ -514,6 +518,20 @@ const EditVendorDetails = () => {
                           <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
                         </div>
                       </div>
+                    </div>
+
+                    {/* Branch Name */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-2">
+                        Branch Name
+                      </label>
+                      <input
+                        type="text"
+                        name="branchName"
+                        value={formData.branchName}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900"
+                      />
                     </div>
 
                     {/* Account Number and IFSC Code */}

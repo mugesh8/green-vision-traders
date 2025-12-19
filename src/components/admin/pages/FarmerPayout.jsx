@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Search, ChevronDown, ArrowLeft } from 'lucide-react';
 
 const FarmerPayout = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [timeFilter, setTimeFilter] = useState('All Time');
   const [statusFilter, setStatusFilter] = useState('All Status');
@@ -137,12 +138,37 @@ const FarmerPayout = () => {
       <div className="max-w-7xl mx-auto">
         {/* Back Button */}
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate(`/farmers/${id}`)}
           className="flex items-center gap-2 mb-6 px-4 py-2 bg-white rounded-lg text-gray-600 hover:text-gray-800 transition-colors shadow-sm"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span className="text-sm font-medium">Back</span>
+          <span className="text-sm font-medium">Back to Farmer Details</span>
         </button>
+
+        {/* Tab Buttons */}
+        <div className="flex flex-wrap gap-3 mb-6">
+          <button 
+            onClick={() => navigate(`/farmers/${id}`)}
+            className="px-6 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+          >
+            Personal Info
+          </button>
+          <button 
+            onClick={() => navigate(`/farmers/${id}/orders`)}
+            className="px-6 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+          >
+            Order List
+          </button>
+          <button className="px-6 py-2.5 bg-[#0D7C66] text-white rounded-lg font-medium transition-colors shadow-sm">
+            Payout
+          </button>
+          <button 
+            onClick={() => navigate(`/farmers/${id}/vegetable-availability`)}
+            className="px-6 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+          >
+            Vegetable Availability
+          </button>
+        </div>
 
         {/* Search Bar and Filters */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">

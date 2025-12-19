@@ -13,6 +13,7 @@ import EditFarmer from './components/admin/pages/EditFarmer'
 import FarmerDetails from './components/admin/pages/FarmerDetails'
 import FarmerIndividualOrderHistory from './components/admin/pages/FarmerIndividualOrderHistory'
 import FarmerPayout from './components/admin/pages/FarmerPayout'
+import VegetableAvailability from './components/admin/pages/VegetableAvailability'
 import VendorDetails from './components/admin/pages/VendorDetails'
 import AddVendorForm from './components/admin/pages/AddVendor'
 import EditVendorDetails from './components/admin/pages/EditVendor'
@@ -76,11 +77,11 @@ import OrderManagementList from './components/admin/pages/OrderManagement'
 import OrderCreate from './components/admin/pages/OrderCreate'
 import OrderView from './components/admin/pages/OrderView'
 import PreOrder from './components/admin/pages/PreOrder'
-import PreorderManagement from './components/admin/pages/PreorderManagement'
 import OrderAssignManagement from './components/admin/pages/OrderAssignManagement'
 import OrderAssignCreateStage1 from './components/admin/pages/OrderAssignCreateStage1'
 import OrderAssignCreateStage2 from './components/admin/pages/OrderAssignCreateStage2'
 import OrderAssignCreateStage3 from './components/admin/pages/OrderAssignCreateStage3'
+import OrderAssignEdit from './components/admin/pages/OrderAssignEdit'
 import StockManagement from './components/admin/pages/StockManagement'
 import StockReassignmentForm from './components/admin/pages/StockReassignmentForm'
 import PackingInventory from './components/admin/pages/PackingInventory'
@@ -88,6 +89,9 @@ import PayoutFormulas from './components/admin/pages/PayoutFormulas'
 import Airport from './components/admin/pages/Airport'
 import AddInventory from './components/admin/pages/AddInventory'
 import EditInventory from './components/admin/pages/EditInventory'
+import PetrolBunkManagement from './components/admin/pages/PetrolBunkManagement'
+import LabourRateManagement from './components/admin/pages/LabourRateManagement'
+import DriverRateManagement from './components/admin/pages/DriverRateManagement'
 
 const App = () => {
   return (
@@ -106,6 +110,7 @@ const App = () => {
         <Route path="/farmers/:id" element={<ProtectedRoute><Layout><FarmerDetails /></Layout></ProtectedRoute>} />
         <Route path="/farmers/:id/orders" element={<ProtectedRoute><Layout><FarmerIndividualOrderHistory /></Layout></ProtectedRoute>} />
         <Route path="/farmers/:id/payout" element={<ProtectedRoute><Layout><FarmerPayout /></Layout></ProtectedRoute>} />
+        <Route path="/farmers/:id/vegetable-availability" element={<ProtectedRoute><Layout><VegetableAvailability /></Layout></ProtectedRoute>} />
         <Route path="/suppliers" element={<ProtectedRoute><Layout><SupplierDashboard /></Layout></ProtectedRoute>} />
         <Route path="/suppliers/add" element={<ProtectedRoute><Layout><AddSupplierForm /></Layout></ProtectedRoute>} />
         <Route path="/suppliers/:id/edit" element={<ProtectedRoute><Layout><EditSupplier /></Layout></ProtectedRoute>} />
@@ -157,11 +162,11 @@ const App = () => {
         <Route path="/orders/:id" element={<ProtectedRoute><Layout><OrderView /></Layout></ProtectedRoute>} />
         <Route path="/preorders/:id" element={<ProtectedRoute><Layout><PreOrder /></Layout></ProtectedRoute>} />
         <Route path="/drafts/:id" element={<ProtectedRoute><Layout><OrderView /></Layout></ProtectedRoute>} />
-        <Route path="/preorders" element={<ProtectedRoute><Layout><PreorderManagement /></Layout></ProtectedRoute>} />
         <Route path="/order-assign" element={<ProtectedRoute><Layout><OrderAssignManagement /></Layout></ProtectedRoute>} />
         <Route path="/order-assign/stage1/:id" element={<ProtectedRoute><Layout><OrderAssignCreateStage1 /></Layout></ProtectedRoute>} />
         <Route path="/order-assign/stage2/:id" element={<ProtectedRoute><Layout><OrderAssignCreateStage2 /></Layout></ProtectedRoute>} />
         <Route path="/order-assign/stage3/:id" element={<ProtectedRoute><Layout><OrderAssignCreateStage3 /></Layout></ProtectedRoute>} />
+        <Route path="/order-assign/edit/:id" element={<ProtectedRoute><Layout><OrderAssignEdit /></Layout></ProtectedRoute>} />
         <Route path="/stock" element={<ProtectedRoute><Layout><StockManagement /></Layout></ProtectedRoute>} />
         <Route path="/stock/:id" element={<ProtectedRoute><Layout><StockReassignmentForm /></Layout></ProtectedRoute>} />
         <Route path="/payouts" element={<ProtectedRoute><Layout><PayoutManagement /></Layout></ProtectedRoute>} />
@@ -180,6 +185,9 @@ const App = () => {
         <Route path="/settings/editinventory" element={<ProtectedRoute><Layout><EditInventory /></Layout></ProtectedRoute>} />
         <Route path="/settings/airport" element={<ProtectedRoute><Layout><Airport /></Layout></ProtectedRoute>} />
         <Route path="/settings/payout-formulas" element={<ProtectedRoute><Layout><PayoutFormulas /></Layout></ProtectedRoute>} />
+        <Route path="/settings/petroleum" element={<ProtectedRoute><Layout><PetrolBunkManagement /></Layout></ProtectedRoute>} />
+        <Route path="/settings/labour-rate" element={<ProtectedRoute><Layout><LabourRateManagement /></Layout></ProtectedRoute>} />
+        <Route path="/settings/driver-rate" element={<ProtectedRoute><Layout><DriverRateManagement /></Layout></ProtectedRoute>} />
         <Route path="/" element={localStorage.getItem('authToken') ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />} />
       </Routes>
     </Router>

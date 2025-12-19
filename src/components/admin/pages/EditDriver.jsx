@@ -27,6 +27,11 @@ const EditDriver = () => {
     vehicle_condition: 'Good',
     pollution_certificate: '',
     ka_permit: '',
+    account_holder_name: '',
+    bank_name: '',
+    branch_name: '',
+    account_number: '',
+    IFSC_code: '',
     delivery_type: 'Local Pickups',
     status: 'Available'
   });
@@ -104,6 +109,11 @@ const EditDriver = () => {
           pollution_certificate_expiry_date: driver.pollution_certificate_expiry_date || '',
           ka_permit: driver.ka_permit || driver.kaPermit || '',
           ka_permit_expiry_date: driver.ka_permit_expiry_date || '',
+          account_holder_name: driver.account_holder_name || '',
+          bank_name: driver.bank_name || '',
+          branch_name: driver.branch_name || '',
+          account_number: driver.account_number || '',
+          IFSC_code: driver.IFSC_code || driver.ifsc_code || '',
           delivery_type: driver.delivery_type || driver.deliveryType || 'Local Pickups',
           status: driver.status || 'Available',
           driver_image: driver.driver_image || '',
@@ -918,6 +928,69 @@ const EditDriver = () => {
                     value={formData.ka_permit_expiry_date}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Bank Account Details Section */}
+            <div className="mb-8">
+              <h2 className="text-xl font-bold text-gray-900 mb-6">Bank Account Details</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm text-gray-700 mb-2">Account Holder Name</label>
+                  <input
+                    type="text"
+                    name="account_holder_name"
+                    value={formData.account_holder_name}
+                    onChange={handleInputChange}
+                    placeholder="As per bank account"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-700 mb-2">Bank Name</label>
+                  <input
+                    type="text"
+                    name="bank_name"
+                    value={formData.bank_name}
+                    onChange={handleInputChange}
+                    placeholder="Enter bank name"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-700 mb-2">Branch Name</label>
+                  <input
+                    type="text"
+                    name="branch_name"
+                    value={formData.branch_name}
+                    onChange={handleInputChange}
+                    placeholder="Enter branch name"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-700 mb-2">Account Number</label>
+                  <input
+                    type="text"
+                    name="account_number"
+                    value={formData.account_number}
+                    onChange={handleInputChange}
+                    placeholder="Enter account number"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-700 mb-2">IFSC Code</label>
+                  <input
+                    type="text"
+                    name="IFSC_code"
+                    value={formData.IFSC_code}
+                    onChange={handleInputChange}
+                    placeholder="Enter IFSC code"
+                    maxLength="11"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm uppercase"
                   />
                 </div>
               </div>

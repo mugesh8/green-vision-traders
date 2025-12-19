@@ -64,8 +64,8 @@ const LabourManagement = () => {
         avatar: labour.full_name.split(' ').map(n => n[0]).join('').toUpperCase(),
         avatarBg: 'bg-teal-700',
         profileImage: labour.profile_image,
-        orderId: labour.order_id || 'Not Assigned',
         phone: labour.mobile_number,
+        workType: labour.work_type,
         status: labour.status,
         statusColor: labour.status === 'Present' ? 'bg-[#10B981]' : labour.status === 'Absent' ? 'bg-red-500' : 'bg-orange-500',
         dailyWage: `₹${labour.daily_wage}`
@@ -243,10 +243,9 @@ const LabourManagement = () => {
           <table className="w-full min-w-[800px]">
             <thead>
               <tr className="bg-[#D4F4E8]">
-                <th className="px-4 sm:px-6 py-4 text-left text-xs sm:text-sm font-semibold text-[#0D5C4D]">Labour Id</th>
                 <th className="px-4 sm:px-6 py-4 text-left text-xs sm:text-sm font-semibold text-[#0D5C4D]">Name</th>
-                <th className="px-4 sm:px-6 py-4 text-left text-xs sm:text-sm font-semibold text-[#0D5C4D]">Order Id</th>
                 <th className="px-4 sm:px-6 py-4 text-left text-xs sm:text-sm font-semibold text-[#0D5C4D]">Phone</th>
+                <th className="px-4 sm:px-6 py-4 text-left text-xs sm:text-sm font-semibold text-[#0D5C4D]">Work Type</th>
                 <th className="px-4 sm:px-6 py-4 text-left text-xs sm:text-sm font-semibold text-[#0D5C4D]">Status</th>
                 <th className="px-4 sm:px-6 py-4 text-left text-xs sm:text-sm font-semibold text-[#0D5C4D]">Daily Wage</th>
                 <th className="px-4 sm:px-6 py-4 text-left text-xs sm:text-sm font-semibold text-[#0D5C4D]">Action</th>
@@ -255,13 +254,13 @@ const LabourManagement = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-8 text-center text-[#6B8782]">
+                  <td colSpan="6" className="px-6 py-8 text-center text-[#6B8782]">
                     Loading labours...
                   </td>
                 </tr>
               ) : labours.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-8 text-center text-[#6B8782]">
+                  <td colSpan="6" className="px-6 py-8 text-center text-[#6B8782]">
                     No labours found
                   </td>
                 </tr>
@@ -288,22 +287,16 @@ const LabourManagement = () => {
                         ) : null}
                         <span className={labour.profileImage ? 'hidden' : ''}>{labour.avatar}</span>
                       </div>
-                      <div className="text-sm font-medium text-[#0D5C4D]">{labour.labourId}</div>
-                    </div>
-                  </td>
-
-                  <td className="px-4 sm:px-6 py-4">
-                    <div className="text-sm font-medium text-[#0D5C4D]">{labour.name}</div>
-                  </td>
-
-                  <td className="px-4 sm:px-6 py-4">
-                    <div className={`text-sm ${labour.orderId === 'Not Assigned' ? 'text-[#6B8782]' : 'text-[#0D5C4D]'}`}>
-                      {labour.orderId}
+                      <div className="text-sm font-medium text-[#0D5C4D]">{labour.name}</div>
                     </div>
                   </td>
 
                   <td className="px-4 sm:px-6 py-4">
                     <div className="text-sm text-[#6B8782]">{labour.phone}</div>
+                  </td>
+
+                  <td className="px-4 sm:px-6 py-4">
+                    <div className="text-sm text-[#0D5C4D]">{labour.workType || 'N/A'}</div>
                   </td>
 
                   <td className="px-4 sm:px-6 py-4">

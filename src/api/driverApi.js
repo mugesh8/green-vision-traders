@@ -65,3 +65,13 @@ export const getDriverStats = async () => {
     throw error.response?.data || error.message;
   }
 };
+
+// Get present drivers today
+export const getPresentDriversToday = async () => {
+  try {
+    const response = await api.get('/driver-attendance/present-today');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};

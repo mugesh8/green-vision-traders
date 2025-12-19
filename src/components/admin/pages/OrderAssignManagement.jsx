@@ -20,7 +20,7 @@ const OrderAssignManagement = () => {
       const response = await getAllOrders();
       const ordersData = response.data || [];
       setOrders(ordersData);
-      
+
       // Fetch assignment data for each order
       const assignmentsData = {};
       for (const order of ordersData) {
@@ -33,7 +33,7 @@ const OrderAssignManagement = () => {
         }
       }
       setAssignments(assignmentsData);
-      
+
       setError(null);
     } catch (err) {
       console.error('Error fetching orders:', err);
@@ -82,7 +82,7 @@ const OrderAssignManagement = () => {
         <div className="text-center">
           <div className="text-red-500 text-xl mb-4">Error</div>
           <p className="text-gray-600 mb-4">{error}</p>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
           >
@@ -237,12 +237,25 @@ const OrderAssignManagement = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <button 
-                      onClick={() => navigate(`/order-assign/stage1/${order.oid}`, { state: { orderData: order } })}
-                      className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors"
-                    >
-                      Assign
-                    </button>
+                    {(() => {
+                      const isStage1Completed = assignments[order.oid]?.stage1_status === 'completed';
+                      console.log(`Order ${order.oid}: stage1_status =`, assignments[order.oid]?.stage1_status, ', showing Edit:', isStage1Completed);
+                      return isStage1Completed ? (
+                        <button
+                          onClick={() => navigate(`/order-assign/stage1/${order.oid}`, { state: { orderData: order } })}
+                          className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+                        >
+                          Edit
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => navigate(`/order-assign/stage1/${order.oid}`, { state: { orderData: order } })}
+                          className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors"
+                        >
+                          Assign
+                        </button>
+                      );
+                    })()}
                   </td>
                 </tr>
               ))}
@@ -275,3 +288,4 @@ const OrderAssignManagement = () => {
 };
 
 export default OrderAssignManagement;
+

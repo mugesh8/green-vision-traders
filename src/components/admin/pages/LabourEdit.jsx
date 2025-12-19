@@ -17,9 +17,15 @@ const EditLabour = () => {
     gender: '',
     bloodGroup: '',
     address: '',
+    workType: '',
     department: '',
     dailyWage: '',
     joiningDate: '',
+    accountHolderName: '',
+    bankName: '',
+    branchName: '',
+    accountNumber: '',
+    ifscCode: '',
     status: ''
   });
 
@@ -49,9 +55,15 @@ const EditLabour = () => {
           gender: data.gender,
           bloodGroup: data.blood_group || '',
           address: data.address,
+          workType: data.work_type || '',
           department: data.department,
           dailyWage: data.daily_wage,
           joiningDate: data.joining_date,
+          accountHolderName: data.account_holder_name || '',
+          bankName: data.bank_name || '',
+          branchName: data.branch_name || '',
+          accountNumber: data.account_number || '',
+          ifscCode: data.IFSC_code || '',
           status: data.status === 'InActive' ? 'Inactive' : data.status
         });
         if (data.profile_image) {
@@ -89,9 +101,15 @@ const EditLabour = () => {
       formDataToSend.append('gender', formData.gender);
       formDataToSend.append('blood_group', formData.bloodGroup);
       formDataToSend.append('address', formData.address);
+      formDataToSend.append('work_type', formData.workType);
       formDataToSend.append('department', formData.department);
       formDataToSend.append('daily_wage', formData.dailyWage);
       formDataToSend.append('joining_date', formData.joiningDate);
+      if (formData.accountHolderName) formDataToSend.append('account_holder_name', formData.accountHolderName);
+      if (formData.bankName) formDataToSend.append('bank_name', formData.bankName);
+      if (formData.branchName) formDataToSend.append('branch_name', formData.branchName);
+      if (formData.accountNumber) formDataToSend.append('account_number', formData.accountNumber);
+      if (formData.ifscCode) formDataToSend.append('IFSC_code', formData.ifscCode);
       formDataToSend.append('status', formData.status === 'Inactive' ? 'InActive' : formData.status);
       
       if (profileImage) formDataToSend.append('profile_image', profileImage);
@@ -337,6 +355,32 @@ const EditLabour = () => {
             <h2 className="text-xl font-bold text-[#0D5C4D] mb-6 italic">Work Details</h2>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Work Type */}
+              <div>
+                <label className="block text-sm font-medium text-[#0D5C4D] mb-2">
+                  Work Type <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <select
+                    name="workType"
+                    value={formData.workType}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2.5 bg-white border border-[#D0E0DB] rounded-lg text-[#0D5C4D] focus:outline-none focus:ring-2 focus:ring-[#0D8568] focus:border-transparent appearance-none cursor-pointer"
+                    required
+                  >
+                    <option value="">Select work type</option>
+                    <option value="Normal">Normal</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Heavy">Heavy</option>
+                  </select>
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                    <svg className="w-4 h-4 text-[#6B8782]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
               {/* Department */}
               <div>
                 <label className="block text-sm font-medium text-[#0D5C4D] mb-2">
@@ -426,6 +470,69 @@ const EditLabour = () => {
                     </svg>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bank Account Details Section */}
+          <div className="mb-8">
+            <h2 className="text-xl font-bold text-[#0D5C4D] mb-6 italic">Bank Account Details</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-[#0D5C4D] mb-2">Account Holder Name</label>
+                <input
+                  type="text"
+                  name="accountHolderName"
+                  value={formData.accountHolderName}
+                  onChange={handleInputChange}
+                  placeholder="As per bank account"
+                  className="w-full px-4 py-2.5 bg-white border border-[#D0E0DB] rounded-lg text-[#0D5C4D] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#0D8568] focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#0D5C4D] mb-2">Bank Name</label>
+                <input
+                  type="text"
+                  name="bankName"
+                  value={formData.bankName}
+                  onChange={handleInputChange}
+                  placeholder="Enter bank name"
+                  className="w-full px-4 py-2.5 bg-white border border-[#D0E0DB] rounded-lg text-[#0D5C4D] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#0D8568] focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#0D5C4D] mb-2">Branch Name</label>
+                <input
+                  type="text"
+                  name="branchName"
+                  value={formData.branchName}
+                  onChange={handleInputChange}
+                  placeholder="Enter branch name"
+                  className="w-full px-4 py-2.5 bg-white border border-[#D0E0DB] rounded-lg text-[#0D5C4D] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#0D8568] focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#0D5C4D] mb-2">Account Number</label>
+                <input
+                  type="text"
+                  name="accountNumber"
+                  value={formData.accountNumber}
+                  onChange={handleInputChange}
+                  placeholder="Enter account number"
+                  className="w-full px-4 py-2.5 bg-white border border-[#D0E0DB] rounded-lg text-[#0D5C4D] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#0D8568] focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#0D5C4D] mb-2">IFSC Code</label>
+                <input
+                  type="text"
+                  name="ifscCode"
+                  value={formData.ifscCode}
+                  onChange={handleInputChange}
+                  placeholder="Enter IFSC code"
+                  maxLength="11"
+                  className="w-full px-4 py-2.5 bg-white border border-[#D0E0DB] rounded-lg text-[#0D5C4D] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#0D8568] focus:border-transparent uppercase"
+                />
               </div>
             </div>
           </div>

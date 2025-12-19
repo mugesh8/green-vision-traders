@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { updateInventory, deleteInventory } from '../../../api/inventoryApi';
 
 const EditInventory = ({ item, onClose, onUpdate, onDelete }) => {
   const [formData, setFormData] = useState({
@@ -7,7 +8,8 @@ const EditInventory = ({ item, onClose, onUpdate, onDelete }) => {
     category: item.category,
     weight: item.weight,
     unit: item.unit,
-    price: item.price
+    price: item.price,
+    color: item.color || ''
   });
 
   const [errors, setErrors] = useState({});
@@ -34,37 +36,60 @@ const EditInventory = ({ item, onClose, onUpdate, onDelete }) => {
     const newErrors = {};
     if (!formData.name.trim()) newErrors.name = 'Product name is required';
     if (!formData.category) newErrors.category = 'Category is required';
-    if (!formData.weight || formData.weight <= 0) newErrors.weight = 'Valid weight/quantity is required';
-    if (!formData.unit) newErrors.unit = 'Unit type is required';
+    if (formData.category === 'Tape') {
+      if (!formData.color.trim()) newErrors.color = 'Color is required for tape';
+    } else {
+      if (!formData.weight || formData.weight <= 0) newErrors.weight = 'Valid weight/quantity is required';
+      if (!formData.unit) newErrors.unit = 'Unit type is required';
+    }
     if (!formData.price || formData.price <= 0) newErrors.price = 'Valid price is required';
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = validate();
     
     if (Object.keys(newErrors).length === 0) {
-      onUpdate({
-        ...formData,
-        weight: parseFloat(formData.weight),
-        price: parseFloat(formData.price)
-      });
-      onClose();
+      try {
+        const itemData = {
+          name: formData.name,
+          category: formData.category,
+          price: parseFloat(formData.price)
+        };
+        if (formData.category === 'Tape') {
+          itemData.color = formData.color;
+        } else {
+          itemData.weight = parseFloat(formData.weight);
+          itemData.unit = formData.unit;
+        }
+        await updateInventory(item.id, itemData);
+        onUpdate();
+        onClose();
+      } catch (error) {
+        console.error('Error updating inventory:', error);
+        alert('Failed to update inventory item');
+      }
     } else {
       setErrors(newErrors);
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (window.confirm('Are you sure you want to delete this item?')) {
-      onDelete(item.id);
-      onClose();
+      try {
+        await deleteInventory(item.id);
+        onDelete(item.id);
+        onClose();
+      } catch (error) {
+        console.error('Error deleting inventory:', error);
+        alert('Failed to delete inventory item');
+      }
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
@@ -135,7 +160,31 @@ const EditInventory = ({ item, onClose, onUpdate, onDelete }) => {
               )}
             </div>
 
-            {/* Weight/Quantity and Unit Type */}
+            {/* Color field for Tape */}
+            {formData.category === 'Tape' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Color
+                  <span className="text-red-500 ml-1">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="color"
+                  value={formData.color}
+                  onChange={handleChange}
+                  placeholder="Enter color"
+                  className={`w-full px-4 py-2.5 border ${
+                    errors.color ? 'border-red-500' : 'border-gray-300'
+                  } rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm`}
+                />
+                {errors.color && (
+                  <p className="mt-1 text-xs text-red-500">{errors.color}</p>
+                )}
+              </div>
+            )}
+
+            {/* Weight/Quantity and Unit Type - Hidden for Tape */}
+            {formData.category !== 'Tape' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -190,6 +239,7 @@ const EditInventory = ({ item, onClose, onUpdate, onDelete }) => {
                 )}
               </div>
             </div>
+            )}
 
             {/* Price per Unit */}
             <div>

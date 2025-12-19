@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import AddInventory from './AddInventory';
 import EditInventory from './EditInventory';
+import ConfirmDeleteModal from '../../common/ConfirmDeleteModal';
+import { getAllInventory, deleteInventory } from '../../../api/inventoryApi';
 
 const PackingInventory = () => {
   const navigate = useNavigate();
@@ -13,23 +15,30 @@ const PackingInventory = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [openActionMenu, setOpenActionMenu] = useState(null);
-
-  // Sample inventory data
-  const [inventoryItems, setInventoryItems] = useState([
-    { id: 1, name: '30Kg Cardboard Box', category: 'Boxes', weight: 30, unit: 'kg', price: 85 },
-    { id: 2, name: '15Kg Paper Box', category: 'Boxes', weight: 15, unit: 'kg', price: 65 },
-    { id: 3, name: '5Kg Plastic Bag', category: 'Bags', weight: 5, unit: 'kg', price: 12 },
-    { id: 4, name: 'Packing Tape Roll', category: 'Tape', weight: 100, unit: 'm', price: 45 },
-    { id: 5, name: 'Plastic Cover Sheet', category: 'Plastic Covers', weight: 2, unit: 'kg', price: 8 },
-    { id: 6, name: 'Brown Paper Roll', category: 'Paper', weight: 50, unit: 'm', price: 120 },
-    { id: 7, name: '10Kg Jute Bag', category: 'Bags', weight: 10, unit: 'kg', price: 28 },
-    { id: 8, name: '5Kg Crate', category: 'Boxes', weight: 5, unit: 'kg', price: 95 },
-    { id: 9, name: '20Kg Gunny Bag', category: 'Bags', weight: 20, unit: 'kg', price: 35 },
-    { id: 10, name: 'Stretch Film Roll', category: 'Plastic Covers', weight: 500, unit: 'm', price: 280 },
-  ]);
+  const [inventoryItems, setInventoryItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [totalPages, setTotalPages] = useState(1);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, name: '' });
 
   const categories = ['All', 'Boxes', 'Bags', 'Tape', 'Paper', 'Plastic Covers'];
   const itemsPerPage = 10;
+
+  useEffect(() => {
+    fetchInventory();
+  }, [currentPage]);
+
+  const fetchInventory = async () => {
+    try {
+      setLoading(true);
+      const response = await getAllInventory(currentPage, itemsPerPage);
+      setInventoryItems(response.data);
+      setTotalPages(response.pagination.totalPages);
+    } catch (error) {
+      console.error('Error fetching inventory:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleEdit = (item) => {
     setSelectedItem(item);
@@ -37,25 +46,31 @@ const PackingInventory = () => {
     setOpenActionMenu(null);
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this item?')) {
-      setInventoryItems(inventoryItems.filter(item => item.id !== id));
-    }
+  const handleDelete = (id, name) => {
+    setDeleteModal({ isOpen: true, id, name });
     setOpenActionMenu(null);
   };
 
-  const handleAddItem = (newItem) => {
-    const item = {
-      id: inventoryItems.length + 1,
-      ...newItem
-    };
-    setInventoryItems([...inventoryItems, item]);
+  const confirmDelete = async () => {
+    try {
+      await deleteInventory(deleteModal.id);
+      setDeleteModal({ isOpen: false, id: null, name: '' });
+      fetchInventory();
+    } catch (error) {
+      console.error('Error deleting inventory:', error);
+      alert('Failed to delete item');
+    }
   };
 
-  const handleUpdateItem = (updatedItem) => {
-    setInventoryItems(inventoryItems.map(item => 
-      item.id === updatedItem.id ? updatedItem : item
-    ));
+  const handleAddItem = () => {
+    fetchInventory();
+    setIsAddModalOpen(false);
+  };
+
+  const handleUpdateItem = () => {
+    fetchInventory();
+    setIsEditModalOpen(false);
+    setSelectedItem(null);
   };
 
   const handleExport = () => {
@@ -69,9 +84,18 @@ const PackingInventory = () => {
     return matchesSearch && matchesCategory;
   });
 
-  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedItems = filteredItems.slice(startIndex, startIndex + itemsPerPage);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading inventory...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -100,6 +124,36 @@ const PackingInventory = () => {
             Airport Locations
           </button>
           <button 
+            onClick={() => navigate('/settings/petroleum')}
+            className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-colors ${
+              location.pathname === '/settings/petroleum' 
+                ? 'bg-[#0D7C66] text-white' 
+                : 'bg-[#D4F4E8] text-[#0D5C4D] hover:bg-[#B8F4D8]'
+            }`}
+          >
+            Petroleum Management
+          </button>
+          <button 
+            onClick={() => navigate('/settings/labour-rate')}
+            className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-colors ${
+              location.pathname === '/settings/labour-rate' 
+                ? 'bg-[#0D7C66] text-white' 
+                : 'bg-[#D4F4E8] text-[#0D5C4D] hover:bg-[#B8F4D8]'
+            }`}
+          >
+            Labour Rate
+          </button>
+          <button 
+            onClick={() => navigate('/settings/driver-rate')}
+            className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-colors ${
+              location.pathname === '/settings/driver-rate' 
+                ? 'bg-[#0D7C66] text-white' 
+                : 'bg-[#D4F4E8] text-[#0D5C4D] hover:bg-[#B8F4D8]'
+            }`}
+          >
+            Driver Rate
+          </button>
+          {/* <button 
             onClick={() => navigate('/settings/payout-formulas')}
             className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-colors ${
               location.pathname === '/settings/payout-formulas' 
@@ -108,7 +162,7 @@ const PackingInventory = () => {
             }`}
           >
             Payout Formulas
-          </button>
+          </button> */}
         </div>
       </div>
 
@@ -198,7 +252,7 @@ const PackingInventory = () => {
                     Category
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Weight/Unit
+                    Weight/Unit/Color
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Price/Unit
@@ -209,12 +263,12 @@ const PackingInventory = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {paginatedItems.map((item) => (
+                {filteredItems.map((item) => (
                   <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 text-sm text-gray-900">{item.name}</td>
                     <td className="px-6 py-4 text-sm text-gray-600">{item.category}</td>
                     <td className="px-6 py-4 text-sm text-gray-600">
-                      {item.weight} {item.unit}
+                      {item.category === 'Tape' ? item.color : `${item.weight} ${item.unit}`}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">₹{item.price}</td>
                     <td className="px-6 py-4 text-sm text-gray-600 relative">
@@ -243,7 +297,7 @@ const PackingInventory = () => {
                               Edit
                             </button>
                             <button
-                              onClick={() => handleDelete(item.id)}
+                              onClick={() => handleDelete(item.id, item.name)}
                               className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-50 transition-colors"
                             >
                               Delete
@@ -261,7 +315,7 @@ const PackingInventory = () => {
           {/* Pagination */}
           <div className="px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-sm text-gray-600">
-              Showing {startIndex + 1} of {filteredItems.length} Farmers
+              Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredItems.length)} of {filteredItems.length} items
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -320,6 +374,15 @@ const PackingInventory = () => {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmDeleteModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, id: null, name: '' })}
+        onConfirm={confirmDelete}
+        title="Delete Inventory Item"
+        message={`Are you sure you want to delete "${deleteModal.name}"? This action cannot be undone.`}
+      />
 
       {/* Modals */}
       {isAddModalOpen && (

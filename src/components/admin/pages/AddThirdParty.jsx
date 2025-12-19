@@ -22,6 +22,7 @@ const AddThirdParty = () => {
     vegetables: [],
     accountHolderName: '',
     bankName: '',
+    branchName: '',
     accountNumber: '',
     ifscCode: ''
   });
@@ -107,6 +108,7 @@ const AddThirdParty = () => {
         product_list: selectedVegetables, // Send as array, not JSON string
         account_holder_name: formData.accountHolderName,
         bank_name: formData.bankName,
+        branch_name: formData.branchName,
         account_number: formData.accountNumber,
         IFSC_code: formData.ifscCode
       };
@@ -472,6 +474,21 @@ const AddThirdParty = () => {
                     onChange={handleInputChange}
                     className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D7C66] focus:border-transparent text-sm"
                     required
+                  />
+                </div>
+
+                {/* Branch Name */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Branch Name
+                  </label>
+                  <input
+                    type="text"
+                    name="branchName"
+                    placeholder="Enter branch name"
+                    value={formData.branchName}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D7C66] focus:border-transparent text-sm"
                   />
                 </div>
 

@@ -22,6 +22,7 @@ const AddFarmer = () => {
     vegetables: [],
     account_holder_name: '',
     bank_name: '',
+    branch_name: '',
     account_number: '',
     IFSC_code: '',
     status: 'active'
@@ -78,6 +79,7 @@ const AddFarmer = () => {
       pincode: 'pin_code',
       accountHolderName: 'account_holder_name',
       bankName: 'bank_name',
+      branchName: 'branch_name',
       accountNumber: 'account_number',
       ifscCode: 'IFSC_code'
     };
@@ -134,6 +136,7 @@ const AddFarmer = () => {
       formDataToSend.append('status', formData.status);
       formDataToSend.append('account_holder_name', formData.account_holder_name);
       formDataToSend.append('bank_name', formData.bank_name);
+      formDataToSend.append('branch_name', formData.branch_name);
       formDataToSend.append('account_number', formData.account_number);
       formDataToSend.append('IFSC_code', formData.IFSC_code);
       if (profileImage) {
@@ -493,6 +496,21 @@ const AddFarmer = () => {
                   onChange={handleInputChange}
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D7C66] focus:border-transparent text-sm"
                   required
+                />
+              </div>
+
+              {/* Branch Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Branch Name
+                </label>
+                <input
+                  type="text"
+                  name="branchName"
+                  placeholder="Enter branch name"
+                  value={formData.branch_name}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D7C66] focus:border-transparent text-sm"
                 />
               </div>
 

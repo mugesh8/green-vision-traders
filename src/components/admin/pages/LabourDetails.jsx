@@ -29,6 +29,7 @@ const LabourDetails = () => {
           gender: data.gender,
           bloodGroup: data.blood_group,
           address: data.address,
+          workType: data.work_type,
           department: data.department,
           dailyWage: `₹${data.daily_wage}`,
           joiningDate: data.joining_date,
@@ -176,6 +177,11 @@ const LabourDetails = () => {
           </div>
           
           <div className="space-y-4">
+            <div>
+              <p className="text-xs font-medium text-gray-500 uppercase mb-1">Work Type</p>
+              <p className="text-gray-800">{labour?.workType || 'N/A'}</p>
+            </div>
+            
             <div>
               <p className="text-xs font-medium text-gray-500 uppercase mb-1">Department</p>
               <span className="bg-teal-100 text-teal-700 px-3 py-1 rounded-full text-sm font-medium">

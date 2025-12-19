@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createInventory } from '../../../api/inventoryApi';
 
 const AddInventory = ({ onClose, onAdd }) => {
   const [formData, setFormData] = useState({
@@ -6,7 +7,8 @@ const AddInventory = ({ onClose, onAdd }) => {
     category: '',
     weight: '',
     unit: '',
-    price: ''
+    price: '',
+    color: ''
   });
 
   const [errors, setErrors] = useState({});
@@ -33,32 +35,47 @@ const AddInventory = ({ onClose, onAdd }) => {
     const newErrors = {};
     if (!formData.name.trim()) newErrors.name = 'Product name is required';
     if (!formData.category) newErrors.category = 'Category is required';
-    if (!formData.weight || formData.weight <= 0) newErrors.weight = 'Valid weight/quantity is required';
-    if (!formData.unit) newErrors.unit = 'Unit type is required';
+    if (formData.category === 'Tape') {
+      if (!formData.color.trim()) newErrors.color = 'Color is required for tape';
+    } else {
+      if (!formData.weight || formData.weight <= 0) newErrors.weight = 'Valid weight/quantity is required';
+      if (!formData.unit) newErrors.unit = 'Unit type is required';
+    }
     if (!formData.price || formData.price <= 0) newErrors.price = 'Valid price is required';
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = validate();
     
     if (Object.keys(newErrors).length === 0) {
-      onAdd({
-        name: formData.name,
-        category: formData.category,
-        weight: parseFloat(formData.weight),
-        unit: formData.unit,
-        price: parseFloat(formData.price)
-      });
-      onClose();
+      try {
+        const itemData = {
+          name: formData.name,
+          category: formData.category,
+          price: parseFloat(formData.price)
+        };
+        if (formData.category === 'Tape') {
+          itemData.color = formData.color;
+        } else {
+          itemData.weight = parseFloat(formData.weight);
+          itemData.unit = formData.unit;
+        }
+        await createInventory(itemData);
+        onAdd();
+        onClose();
+      } catch (error) {
+        console.error('Error creating inventory:', error);
+        alert('Failed to create inventory item');
+      }
     } else {
       setErrors(newErrors);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
@@ -133,7 +150,31 @@ const AddInventory = ({ onClose, onAdd }) => {
               )}
             </div>
 
-            {/* Weight/Quantity and Unit Type */}
+            {/* Color field for Tape */}
+            {formData.category === 'Tape' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Color
+                  <span className="text-red-500 ml-1">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="color"
+                  value={formData.color}
+                  onChange={handleChange}
+                  placeholder="Enter color"
+                  className={`w-full px-4 py-2.5 border ${
+                    errors.color ? 'border-red-500' : 'border-gray-300'
+                  } rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm placeholder-gray-400`}
+                />
+                {errors.color && (
+                  <p className="mt-1 text-xs text-red-500">{errors.color}</p>
+                )}
+              </div>
+            )}
+
+            {/* Weight/Quantity and Unit Type - Hidden for Tape */}
+            {formData.category !== 'Tape' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -192,6 +233,7 @@ const AddInventory = ({ onClose, onAdd }) => {
                 )}
               </div>
             </div>
+            )}
 
             {/* Price per Unit */}
             <div>

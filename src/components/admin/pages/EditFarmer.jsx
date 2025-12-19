@@ -24,6 +24,7 @@ const EditFarmer = () => {
     email: '',
     account_holder_name: '',
     bank_name: '',
+    branch_name: '',
     account_number: '',
     IFSC_code: '',
     status: 'active'
@@ -69,6 +70,7 @@ const EditFarmer = () => {
           email: data.email || '',
           account_holder_name: data.account_holder_name || '',
           bank_name: data.bank_name || '',
+          branch_name: data.branch_name || '',
           account_number: data.account_number || '',
           IFSC_code: data.IFSC_code || '',
           status: data.status || 'active'
@@ -116,6 +118,7 @@ const EditFarmer = () => {
       pincode: 'pin_code',
       accountHolderName: 'account_holder_name',
       bankName: 'bank_name',
+      branchName: 'branch_name',
       accountNumber: 'account_number',
       ifscCode: 'IFSC_code'
     };
@@ -151,6 +154,7 @@ const EditFarmer = () => {
         status: formData.status,
         account_holder_name: formData.account_holder_name,
         bank_name: formData.bank_name,
+        branch_name: formData.branch_name,
         account_number: formData.account_number,
         IFSC_code: formData.IFSC_code
       };
@@ -498,6 +502,21 @@ const EditFarmer = () => {
                   onChange={handleInputChange}
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D7C66] focus:border-transparent text-sm"
                   required
+                />
+              </div>
+
+              {/* Branch Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Branch Name
+                </label>
+                <input
+                  type="text"
+                  name="branchName"
+                  placeholder="Enter branch name"
+                  value={formData.branch_name}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D7C66] focus:border-transparent text-sm"
                 />
               </div>
 

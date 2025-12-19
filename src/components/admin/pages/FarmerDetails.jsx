@@ -104,6 +104,12 @@ const FarmerDetails = () => {
         >
           Payout
         </button>
+        <button 
+          onClick={() => navigate(`/farmers/${id}/vegetable-availability`)}
+          className="px-6 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+        >
+          Vegetable Availability
+        </button>
       </div>
 
       <div className="rounded-lg shadow-sm p-6 mb-6">

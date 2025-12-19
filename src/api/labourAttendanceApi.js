@@ -41,3 +41,13 @@ export const markAbsent = async (labourId, data = {}) => {
     throw error.response?.data || error.message;
   }
 };
+
+export const getPresentLaboursToday = async (date) => {
+  try {
+    const params = date ? `?date=${date}` : '';
+    const response = await api.get(`/labour-attendance/overview${params}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
