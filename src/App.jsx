@@ -12,6 +12,7 @@ import AddFarmer from './components/admin/pages/AddFarmer'
 import EditFarmer from './components/admin/pages/EditFarmer'
 import FarmerDetails from './components/admin/pages/FarmerDetails'
 import FarmerIndividualOrderHistory from './components/admin/pages/FarmerIndividualOrderHistory'
+import FarmerOrderDetails from './components/admin/pages/FarmerOrderDetails'
 import FarmerPayout from './components/admin/pages/FarmerPayout'
 import VegetableAvailability from './components/admin/pages/VegetableAvailability'
 import VendorDetails from './components/admin/pages/VendorDetails'
@@ -109,6 +110,7 @@ const App = () => {
         <Route path="/farmers/:id/edit" element={<ProtectedRoute><Layout><EditFarmer /></Layout></ProtectedRoute>} />
         <Route path="/farmers/:id" element={<ProtectedRoute><Layout><FarmerDetails /></Layout></ProtectedRoute>} />
         <Route path="/farmers/:id/orders" element={<ProtectedRoute><Layout><FarmerIndividualOrderHistory /></Layout></ProtectedRoute>} />
+        <Route path="/farmers/:id/order-details" element={<ProtectedRoute><Layout><FarmerOrderDetails /></Layout></ProtectedRoute>} />
         <Route path="/farmers/:id/payout" element={<ProtectedRoute><Layout><FarmerPayout /></Layout></ProtectedRoute>} />
         <Route path="/farmers/:id/vegetable-availability" element={<ProtectedRoute><Layout><VegetableAvailability /></Layout></ProtectedRoute>} />
         <Route path="/suppliers" element={<ProtectedRoute><Layout><SupplierDashboard /></Layout></ProtectedRoute>} />

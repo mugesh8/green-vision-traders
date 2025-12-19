@@ -14,7 +14,7 @@ const OrderManagement = () => {
   const [showTimeFilter, setShowTimeFilter] = useState(false);
   const [showStatusFilter, setShowStatusFilter] = useState(false);
   const [showProductFilter, setShowProductFilter] = useState(false);
-  
+
   // Filter options
   const timeFilterOptions = ['All Time', 'Today', 'Yesterday', 'Last 7 Days', 'Last 30 Days', 'This Month', 'Last Month'];
   const statusFilterOptions = ['All Status', 'Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
@@ -58,7 +58,15 @@ const OrderManagement = () => {
             createdAt: order.createdAt,
             updatedAt: order.updatedAt
           }));
-          setOrders(transformedOrders);
+
+          // Sort by createdAt descending (newest first)
+          const sortedOrders = [...transformedOrders].sort((a, b) => {
+            const dateA = new Date(a.createdAt || 0);
+            const dateB = new Date(b.createdAt || 0);
+            return dateB - dateA;
+          });
+
+          setOrders(sortedOrders);
         } else {
           setError('Failed to fetch orders');
         }
@@ -80,10 +88,10 @@ const OrderManagement = () => {
         const draftData = response.data.map(draft => {
           // Calculate values similar to how orders are calculated
           const products = draft.draft_data?.products || [];
-                
+
           // Get values from first product if available, otherwise default to 'N/A'
           const firstProduct = products[0];
-                
+
           return {
             id: draft.did,
             customer: draft.customer_name || 'Unnamed Customer',
@@ -145,55 +153,55 @@ const OrderManagement = () => {
   useEffect(() => {
     // Filter orders
     let filtered = [...orders];
-    
+
     // Apply time filter
     filtered = filterByDateRange(filtered, timeFilter);
-    
+
     // Apply search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(order => 
+      filtered = filtered.filter(order =>
         order.id.toLowerCase().includes(query) ||
         order.customer.toLowerCase().includes(query)
       );
     }
-    
+
     // Apply status filter
     if (statusFilter !== 'All Status') {
       const statusValue = statusFilter.toLowerCase();
-      filtered = filtered.filter(order => 
+      filtered = filtered.filter(order =>
         order.status && order.status.toLowerCase() === statusValue
       );
     }
-    
+
     // Apply product filter
     if (productFilter !== 'Product Type') {
-      filtered = filtered.filter(order => 
+      filtered = filtered.filter(order =>
         order.products && order.products.includes(productFilter)
       );
     }
-    
+
     setFilteredOrders(filtered);
-    
+
     // Filter drafts
     let filteredDraftData = [...drafts];
-    
+
     // Apply search filter to drafts
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filteredDraftData = filteredDraftData.filter(draft => 
+      filteredDraftData = filteredDraftData.filter(draft =>
         draft.id.toLowerCase().includes(query) ||
         draft.customer.toLowerCase().includes(query)
       );
     }
-    
+
     // Apply product filter to drafts
     if (productFilter !== 'Product Type') {
-      filteredDraftData = filteredDraftData.filter(draft => 
+      filteredDraftData = filteredDraftData.filter(draft =>
         draft.products && draft.products.includes(productFilter)
       );
     }
-    
+
     setFilteredDrafts(filteredDraftData);
   }, [orders, drafts, searchQuery, statusFilter, productFilter]);
 
@@ -202,13 +210,13 @@ const OrderManagement = () => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setOpenDropdown(null);
       }
-      
+
       // Close filter dropdowns when clicking outside
       if (showTimeFilter || showStatusFilter || showProductFilter) {
         const timeFilterButton = event.target.closest('[data-filter="time"]');
         const statusFilterButton = event.target.closest('[data-filter="status"]');
         const productFilterButton = event.target.closest('[data-filter="product"]');
-        
+
         if (!timeFilterButton && !statusFilterButton && !productFilterButton) {
           setShowTimeFilter(false);
           setShowStatusFilter(false);
@@ -292,10 +300,10 @@ const OrderManagement = () => {
   // Helper function to filter by date range
   const filterByDateRange = (orders, timeFilter) => {
     if (timeFilter === 'All Time') return orders;
-    
+
     const now = new Date();
     let startDate = new Date();
-    
+
     switch (timeFilter) {
       case 'Today':
         startDate.setHours(0, 0, 0, 0);
@@ -321,7 +329,7 @@ const OrderManagement = () => {
       default:
         return orders;
     }
-    
+
     return orders.filter(order => {
       // Note: We need createdAt/updatedAt fields in order objects for this to work
       const orderDate = new Date(order.createdAt || order.updatedAt || now);
@@ -373,7 +381,7 @@ const OrderManagement = () => {
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center justify-end mb-6">
-          <button 
+          <button
             onClick={() => navigate('/orders/create')}
             className="bg-[#0D7C66] hover:bg-[#0a6252] text-white px-6 py-2.5 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center gap-2 w-full sm:w-auto"
           >
@@ -412,7 +420,7 @@ const OrderManagement = () => {
           <div className="flex flex-wrap gap-3">
             {/* Time Filter Dropdown */}
             <div className="relative">
-              <button 
+              <button
                 data-filter="time"
                 onClick={() => {
                   setShowTimeFilter(!showTimeFilter);
@@ -424,7 +432,7 @@ const OrderManagement = () => {
                 <span className="text-gray-700">{timeFilter}</span>
                 <ChevronDown className="w-4 h-4 text-gray-500" />
               </button>
-              
+
               {showTimeFilter && (
                 <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                   {timeFilterOptions.map((option) => (
@@ -442,10 +450,10 @@ const OrderManagement = () => {
                 </div>
               )}
             </div>
-            
+
             {/* Status Filter Dropdown */}
             <div className="relative">
-              <button 
+              <button
                 data-filter="status"
                 onClick={() => {
                   setShowStatusFilter(!showStatusFilter);
@@ -457,7 +465,7 @@ const OrderManagement = () => {
                 <span className="text-gray-700">{statusFilter}</span>
                 <ChevronDown className="w-4 h-4 text-gray-500" />
               </button>
-              
+
               {showStatusFilter && (
                 <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                   {statusFilterOptions.map((option) => (
@@ -475,10 +483,10 @@ const OrderManagement = () => {
                 </div>
               )}
             </div>
-            
+
             {/* Product Filter Dropdown */}
             <div className="relative">
-              <button 
+              <button
                 data-filter="product"
                 onClick={() => {
                   setShowProductFilter(!showProductFilter);
@@ -490,7 +498,7 @@ const OrderManagement = () => {
                 <span className="text-gray-700">{productFilter}</span>
                 <ChevronDown className="w-4 h-4 text-gray-500" />
               </button>
-              
+
               {showProductFilter && (
                 <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                   {productFilterOptions.map((option) => (
@@ -508,7 +516,7 @@ const OrderManagement = () => {
                 </div>
               )}
             </div>
-            
+
             <button className="px-6 py-2.5 border border-[#0D7C66] text-[#0D7C66] rounded-lg hover:bg-[#0D7C66] hover:text-white transition-colors duration-200 font-medium">
               Export
             </button>
@@ -568,80 +576,127 @@ const OrderManagement = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {(filteredOrders.length > 0 ? filteredOrders : orders).map((order, index) => (
-                  <tr
-                    key={index}
-                    className="hover:bg-gray-50 transition-colors duration-150"
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {order.id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      {order.customer}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      {order.boxes}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      {order.packing}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      {order.netWeight}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      {order.grossWeight}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      {order.marketPrice}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      {order.total}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleDropdown(order.id, e);
-                        }}
-                        className="text-[#6B8782] hover:text-[#0D5C4D] transition-colors p-1 hover:bg-[#F0F4F3] rounded"
-                      >
-                        <MoreVertical size={20} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {(() => {
+                  // Pagination logic
+                  const itemsPerPage = 7;
+                  const displayOrders = filteredOrders.length > 0 ? filteredOrders : orders;
+                  const startIndex = (currentPage - 1) * itemsPerPage;
+                  const endIndex = startIndex + itemsPerPage;
+                  const currentOrders = displayOrders.slice(startIndex, endIndex);
+
+                  return currentOrders.map((order, index) => (
+                    <tr
+                      key={index}
+                      className="hover:bg-gray-50 transition-colors duration-150"
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {order.id}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        {order.customer}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        {order.boxes}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        {order.packing}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        {order.netWeight}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        {order.grossWeight}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        {order.marketPrice}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        {order.total}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleDropdown(order.id, e);
+                          }}
+                          className="text-[#6B8782] hover:text-[#0D5C4D] transition-colors p-1 hover:bg-[#F0F4F3] rounded"
+                        >
+                          <MoreVertical size={20} />
+                        </button>
+                      </td>
+                    </tr>
+                  ));
+                })()}
               </tbody>
             </table>
           </div>
 
           {/* Pagination */}
           <div className="px-6 py-4 bg-white border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-gray-600">Showing {(filteredOrders.length > 0 ? filteredOrders : orders).length} of {orders.length} Orders</p>
+            <p className="text-sm text-gray-600">
+              {(() => {
+                const itemsPerPage = 7;
+                const displayOrders = filteredOrders.length > 0 ? filteredOrders : orders;
+                const totalItems = displayOrders.length;
+                const startItem = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+                const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+                return `Showing ${startItem}-${endItem} of ${totalItems} Orders`;
+              })()}
+            </p>
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150"
-                disabled={currentPage === 1}
-              >
-                <ChevronLeft className="w-4 h-4 text-gray-600" />
-              </button>
-              <button
-                className={`px-3 py-1.5 rounded-lg font-medium transition-colors duration-150 ${
-                  currentPage === 1
-                    ? 'bg-[#0D7C66] text-white'
-                    : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
-                }`}
-                onClick={() => setCurrentPage(1)}
-              >
-                1
-              </button>
-              <button
-                onClick={() => setCurrentPage(currentPage + 1)}
-                className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150"
-                disabled={true}
-              >
-                <ChevronRight className="w-4 h-4 text-gray-600" />
-              </button>
+              {(() => {
+                const itemsPerPage = 7;
+                const displayOrders = filteredOrders.length > 0 ? filteredOrders : orders;
+                const totalPages = Math.ceil(displayOrders.length / itemsPerPage);
+
+                return (
+                  <>
+                    <button
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 disabled:opacity-50"
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="w-4 h-4 text-gray-600" />
+                    </button>
+
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+                      const showPage = page === 1 ||
+                        page === totalPages ||
+                        (page >= currentPage - 1 && page <= currentPage + 1);
+
+                      const showEllipsis = (page === currentPage - 2 && currentPage > 3) ||
+                        (page === currentPage + 2 && currentPage < totalPages - 2);
+
+                      if (showEllipsis) {
+                        return <span key={page} className="px-2 text-gray-400">...</span>;
+                      }
+
+                      if (!showPage) return null;
+
+                      return (
+                        <button
+                          key={page}
+                          className={`px-3 py-1.5 rounded-lg font-medium transition-colors duration-150 ${currentPage === page
+                              ? 'bg-[#0D7C66] text-white'
+                              : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+                            }`}
+                          onClick={() => setCurrentPage(page)}
+                        >
+                          {page}
+                        </button>
+                      );
+                    })}
+
+                    <button
+                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                      className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 disabled:opacity-50"
+                      disabled={currentPage === totalPages || totalPages === 0}
+                    >
+                      <ChevronRight className="w-4 h-4 text-gray-600" />
+                    </button>
+                  </>
+                );
+              })()}
             </div>
           </div>
         </div>
@@ -715,7 +770,7 @@ const OrderManagement = () => {
                         {draft.total}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                        <button 
+                        <button
                           onClick={(e) => {
                             e.stopPropagation();
                             toggleDropdown(draft.id, e);
@@ -742,12 +797,12 @@ const OrderManagement = () => {
 
       {/* Dropdown Menu - Fixed Position Outside Table */}
       {openDropdown && (
-        <div 
+        <div
           ref={dropdownRef}
           className="fixed w-32 bg-white rounded-lg shadow-lg border border-[#D0E0DB] py-1 z-[100]"
-          style={{ 
-            top: `${dropdownPosition.top}px`, 
-            left: `${dropdownPosition.left}px` 
+          style={{
+            top: `${dropdownPosition.top}px`,
+            left: `${dropdownPosition.left}px`
           }}
         >
           {activeTab === 'orders' ? (
@@ -783,7 +838,7 @@ const OrderManagement = () => {
             </>
           ) : (
             <>
-            <button
+              <button
                 onClick={() => handleDraftAction('view', openDropdown)}
                 className="w-full text-left px-4 py-2 text-sm text-[#0D5C4D] hover:bg-[#F0F4F3] transition-colors flex items-center gap-2"
               >
