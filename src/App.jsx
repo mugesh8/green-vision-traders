@@ -61,6 +61,7 @@ import LabourManagement from './components/admin/pages/LabourManagement'
 import LabourAdd from './components/admin/pages/LabourAdd'
 import LabourEdit from './components/admin/pages/LabourEdit'
 import LabourDetails from './components/admin/pages/LabourDetails'
+import LabourDailyWorks from './components/admin/pages/LabourDailyWorks'
 import LabourAttendance from './components/admin/pages/LabourAttendance'
 import LabourDailyPayout from './components/admin/pages/LabourDailyPayout'
 import LabourExcessPayManagement from './components/admin/pages/LabourExcessPayManagement'
@@ -83,6 +84,7 @@ import OrderAssignCreateStage1 from './components/admin/pages/OrderAssignCreateS
 import OrderAssignCreateStage2 from './components/admin/pages/OrderAssignCreateStage2'
 import OrderAssignCreateStage3 from './components/admin/pages/OrderAssignCreateStage3'
 import OrderAssignEdit from './components/admin/pages/OrderAssignEdit'
+import LocalOrderAssign from './components/admin/pages/LocalOrderAssign'
 import StockManagement from './components/admin/pages/StockManagement'
 import StockReassignmentForm from './components/admin/pages/StockReassignmentForm'
 import PackingInventory from './components/admin/pages/PackingInventory'
@@ -93,6 +95,7 @@ import EditInventory from './components/admin/pages/EditInventory'
 import PetrolBunkManagement from './components/admin/pages/PetrolBunkManagement'
 import LabourRateManagement from './components/admin/pages/LabourRateManagement'
 import DriverRateManagement from './components/admin/pages/DriverRateManagement'
+import InventoryCompany from './components/admin/pages/InventoryCompany'
 
 const App = () => {
   return (
@@ -110,6 +113,7 @@ const App = () => {
         <Route path="/farmers/:id/edit" element={<ProtectedRoute><Layout><EditFarmer /></Layout></ProtectedRoute>} />
         <Route path="/farmers/:id" element={<ProtectedRoute><Layout><FarmerDetails /></Layout></ProtectedRoute>} />
         <Route path="/farmers/:id/orders" element={<ProtectedRoute><Layout><FarmerIndividualOrderHistory /></Layout></ProtectedRoute>} />
+        <Route path="/farmers/:id/orders/:orderId" element={<ProtectedRoute><Layout><OrderView /></Layout></ProtectedRoute>} />
         <Route path="/farmers/:id/order-details" element={<ProtectedRoute><Layout><FarmerOrderDetails /></Layout></ProtectedRoute>} />
         <Route path="/farmers/:id/payout" element={<ProtectedRoute><Layout><FarmerPayout /></Layout></ProtectedRoute>} />
         <Route path="/farmers/:id/vegetable-availability" element={<ProtectedRoute><Layout><VegetableAvailability /></Layout></ProtectedRoute>} />
@@ -157,6 +161,7 @@ const App = () => {
         <Route path="/labour/excess-pay/add" element={<ProtectedRoute><Layout><AddLabourExcessPay /></Layout></ProtectedRoute>} />
         <Route path="/labour/excess-pay/:id/edit" element={<ProtectedRoute><Layout><EditLabourExcessPay /></Layout></ProtectedRoute>} />
         <Route path="/labour/:id" element={<ProtectedRoute><Layout><LabourDetails /></Layout></ProtectedRoute>} />
+        <Route path="/labour/:id/daily-works" element={<ProtectedRoute><Layout><LabourDailyWorks /></Layout></ProtectedRoute>} />
         <Route path="/labour/daily-payout" element={<ProtectedRoute><Layout><LabourDailyPayout /></Layout></ProtectedRoute>} />
         <Route path="/products/add" element={<ProtectedRoute><Layout><AddProduct /></Layout></ProtectedRoute>} />
         <Route path="/orders" element={<ProtectedRoute><Layout><OrderManagementList /></Layout></ProtectedRoute>} />
@@ -169,6 +174,7 @@ const App = () => {
         <Route path="/order-assign/stage2/:id" element={<ProtectedRoute><Layout><OrderAssignCreateStage2 /></Layout></ProtectedRoute>} />
         <Route path="/order-assign/stage3/:id" element={<ProtectedRoute><Layout><OrderAssignCreateStage3 /></Layout></ProtectedRoute>} />
         <Route path="/order-assign/edit/:id" element={<ProtectedRoute><Layout><OrderAssignEdit /></Layout></ProtectedRoute>} />
+        <Route path="/order-assign/local/:id" element={<ProtectedRoute><Layout><LocalOrderAssign /></Layout></ProtectedRoute>} />
         <Route path="/stock" element={<ProtectedRoute><Layout><StockManagement /></Layout></ProtectedRoute>} />
         <Route path="/stock/:id" element={<ProtectedRoute><Layout><StockReassignmentForm /></Layout></ProtectedRoute>} />
         <Route path="/payouts" element={<ProtectedRoute><Layout><PayoutManagement /></Layout></ProtectedRoute>} />
@@ -183,6 +189,7 @@ const App = () => {
         <Route path="/roles" element={<ProtectedRoute><Layout><RolesPermissionSystem /></Layout></ProtectedRoute>} />
         <Route path="/notifications" element={<ProtectedRoute><Layout><Notifications /></Layout></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Layout><PackingInventory /></Layout></ProtectedRoute>} />
+        <Route path="/settings/inventory-company" element={<ProtectedRoute><Layout><InventoryCompany /></Layout></ProtectedRoute>} />
         <Route path="/settings/createinventory" element={<ProtectedRoute><Layout><AddInventory /></Layout></ProtectedRoute>} />
         <Route path="/settings/editinventory" element={<ProtectedRoute><Layout><EditInventory /></Layout></ProtectedRoute>} />
         <Route path="/settings/airport" element={<ProtectedRoute><Layout><Airport /></Layout></ProtectedRoute>} />

@@ -94,22 +94,22 @@ export const getAllStock = async () => {
 
 // Get all available stock grouped by product
 export const getAvailableStock = async () => {
-    try {
-        const response = await api.get(`${API_BASE_URL}/stock/available/all`);
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching available stock:', error);
-        throw error;
-    }
+  try {
+    const response = await api.get(`${API_BASE_URL}/stock/available/all`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching available stock:', error);
+    throw error;
+  }
 };
 
 // Get stock for a specific product
 export const getProductStock = async (productName) => {
-    try {
-        const response = await api.get(`${API_BASE_URL}/stock/product/${encodeURIComponent(productName)}`);
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching product stock:', error);
-        throw error;
-    }
+  try {
+    const response = await api.get(`${API_BASE_URL}/stock/product/${encodeURIComponent(productName)}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching product stock:', error);
+    throw error;
+  }
 };

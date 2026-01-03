@@ -54,6 +54,12 @@ const EditFarmer = () => {
           getAllProducts(1, 100)
         ]);
         
+        const products = productsResponse.data || [];
+        const productMap = {};
+        products.forEach(p => {
+          productMap[p.pid] = p.product_name;
+        });
+        
         const data = farmerResponse.data || farmerResponse;
         setFormData({
           farmer_name: data.farmer_name || '',
@@ -80,21 +86,30 @@ const EditFarmer = () => {
           setProfileImagePreview(`${BASE_URL}${data.profile_image}`);
         }
         
-        if (data.product_list && Array.isArray(data.product_list)) {
-          setSelectedVegetables(data.product_list);
-        } else if (data.product_list && typeof data.product_list === 'string') {
+        // Parse product_list - handle both JSON string and array
+        let productIds = [];
+        if (typeof data.product_list === 'string') {
           try {
             const parsed = JSON.parse(data.product_list);
-            setSelectedVegetables(Array.isArray(parsed) ? parsed : []);
+            if (Array.isArray(parsed)) {
+              productIds = parsed.map(item => 
+                typeof item === 'object' && item.pid 
+                  ? item.pid 
+                  : parseInt(item)
+              );
+            }
           } catch (e) {
-            console.error('Failed to parse product_list:', e);
-            setSelectedVegetables([]);
+            productIds = [];
           }
-        } else {
-          setSelectedVegetables([]);
+        } else if (Array.isArray(data.product_list)) {
+          productIds = data.product_list.map(item => 
+            typeof item === 'object' && item.pid 
+              ? item.pid 
+              : parseInt(item)
+          );
         }
+        setSelectedVegetables(productIds);
         
-        const products = productsResponse.data || [];
         setAvailableVegetables(products.map(p => ({ id: p.pid, name: p.product_name })));
       } catch (err) {
         console.error('Error fetching data:', err);
@@ -150,7 +165,7 @@ const EditFarmer = () => {
         contact_person: formData.contact_person,
         tape_color: formData.tape_color,
         dealing_person: formData.dialing_person,
-        product_list: selectedVegetables,
+        product_list: JSON.stringify(selectedVegetables),
         status: formData.status,
         account_holder_name: formData.account_holder_name,
         bank_name: formData.bank_name,

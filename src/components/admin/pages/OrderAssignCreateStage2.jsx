@@ -167,13 +167,13 @@ const OrderAssignCreateStage2 = () => {
               if (stage2Summary.labourAssignments && stage2Summary.labourAssignments.length > 0) {
                 // Create a map of product assignments from labour assignments
                 const assignmentMap = {};
-                
+
                 stage2Summary.labourAssignments.forEach(labourAssignment => {
                   const labourName = labourAssignment.labour;
-                  
+
                   labourAssignment.assignments.forEach(assignment => {
                     const key = `${assignment.oiid}-${assignment.entityName}`;
-                    
+
                     if (!assignmentMap[key]) {
                       assignmentMap[key] = {
                         wastage: assignment.wastage,
@@ -184,7 +184,7 @@ const OrderAssignCreateStage2 = () => {
                         labours: []
                       };
                     }
-                    
+
                     // Add labour to the list if not already present
                     if (!assignmentMap[key].labours.includes(labourName)) {
                       assignmentMap[key].labours.push(labourName);
@@ -198,13 +198,13 @@ const OrderAssignCreateStage2 = () => {
                 rows.forEach((row) => {
                   const key = `${row.oiid}-${row.entityName}`;
                   const stage2Data = assignmentMap[key];
-                  
+
                   if (stage2Data) {
                     row.wastage = stage2Data.wastage || '';
                     row.reuse = stage2Data.reuse || '';
                     row.packedAmount = stage2Data.packedAmount || '';
                     row.status = stage2Data.status || 'pending';
-                    
+
                     if (row.isFirstVendor) {
                       row.labour = stage2Data.labours || [];
                       row.tapeColor = stage2Data.tapeColor || '';
@@ -385,6 +385,12 @@ const OrderAssignCreateStage2 = () => {
         <button className="px-6 py-3 bg-emerald-600 text-white rounded-lg font-medium shadow-sm hover:bg-emerald-700 transition-colors">
           Stage 2: Packaging
         </button>
+        <button
+          onClick={() => navigate(`/order-assign/stage3/${id}`, { state: { orderData } })}
+          className="px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+        >
+          Stage 3: Delivery
+        </button>
       </div>
 
       {/* Stage 2 Section */}
@@ -417,7 +423,7 @@ const OrderAssignCreateStage2 = () => {
                 const firstVendorIndex = productRows.findIndex(r => r.oiid === row.oiid);
                 const sameProductRows = productRows.filter(r => r.oiid === row.oiid);
                 const rowSpan = sameProductRows.length;
-                
+
                 return (
                   <tr key={row.id} className="hover:bg-gray-50 transition-colors">
                     {row.isFirstVendor && (

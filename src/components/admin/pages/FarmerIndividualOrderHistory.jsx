@@ -169,7 +169,7 @@ const OrdersList = () => {
         'Customer Name': order.customer_name || 'N/A',
         'Phone Number': order.phone_number || 'N/A',
         'Products': productNames,
-        'Order Date': orderDate,
+        'Created Date': orderDate,
         'Farmer Amount': farmerAmount,
         'Total Order Amount': parseFloat(order.total_amount) || 0,
         'Payment Status': paymentStatus,
@@ -317,7 +317,7 @@ const OrdersList = () => {
                   <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Order ID</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Farmer Name</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Products</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Order Date</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Created Date</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Amount</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Status</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Action</th>

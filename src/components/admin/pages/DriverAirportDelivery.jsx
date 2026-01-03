@@ -1,9 +1,14 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Star, ChevronDown, ChevronRight, ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Star, ChevronDown, ChevronRight, ArrowLeft, FileDown } from 'lucide-react';
+import { getAllOrders } from '../../../api/orderApi';
+import { getOrderAssignment } from '../../../api/orderAssignmentApi';
+import { getDriverById } from '../../../api/driverApi';
+import * as XLSX from 'xlsx';
 
 const DriverAirportDeliveryPage = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
   const [showStartModal, setShowStartModal] = useState(false);
   const [showExpensesModal, setShowExpensesModal] = useState(false);
   const [showEndKmModal, setShowEndKmModal] = useState(false);
@@ -17,76 +22,152 @@ const DriverAirportDeliveryPage = () => {
     litre: ''
   });
 
-  const driverInfo = {
-    name: 'Suresh Kumar',
-    id: 'DRV-002',
-    phone: '+91 98765 43211',
-    email: 'suresh.kumar@email.com',
-    status: 'On Trip',
-    vehicle: {
-      name: 'Mahindra Bolero',
-      number: 'TN 02 CD 5678',
-      capacity: '1.5 Ton'
-    },
-    stats: {
-      todayHours: '6.0 hrs',
-      airportTrips: '184',
-      rating: '4.9'
-    }
-  };
+  const [driverInfo, setDriverInfo] = useState(null);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const [orders, setOrders] = useState([
-    {
-      id: 'APT-2024-A3421',
-      type: 'Line Airport',
-      pickup: { name: 'Warehouse A', location: 'Main Packing Center' },
-      airport: { name: 'Chennai Airport', terminal: 'Terminal 2 - Cargo' },
-      flightTime: '02:30 PM',
-      timeInfo: '30 mins left',
-      status: 'In Transit',
-      weight: '850 kg'
-    },
-    {
-      id: 'APT-2024-A3420',
-      type: 'Line Airport',
-      pickup: { name: 'Warehouse B', location: 'North Packing Center' },
-      airport: { name: 'Chennai Airport', terminal: 'Terminal 2 - Cargo' },
-      flightTime: '11:45 AM',
-      timeInfo: 'Departed 2 hrs ago',
-      status: 'Delivered',
-      weight: '920 kg'
-    },
-    {
-      id: 'APT-2024-A3419',
-      type: 'Line Airport',
-      pickup: { name: 'Warehouse C', location: 'South Processing Unit' },
-      airport: { name: 'Trichy Airport', terminal: 'Domestic Cargo' },
-      flightTime: '04:15 PM',
-      timeInfo: 'Scheduled',
-      status: 'Collected',
-      weight: '650 kg'
-    },
-    {
-      id: 'APT-2024-A3418',
-      type: 'Line Airport',
-      pickup: { name: 'Warehouse A', location: 'Main Packing Center' },
-      airport: { name: 'Coimbatore Airport', terminal: 'International Cargo' },
-      flightTime: '08:30 AM',
-      timeInfo: 'Departed 5 hrs ago',
-      status: 'Expenses',
-      weight: '1100 kg'
-    },
-    {
-      id: 'APT-2024-A3417',
-      type: 'Line Airport',
-      pickup: { name: 'Warehouse B', location: 'North Packing Center' },
-      airport: { name: 'Chennai Airport', terminal: 'Terminal 2 - Cargo' },
-      flightTime: '06:00 PM',
-      timeInfo: 'Evening Flight',
-      status: 'Assigned',
-      weight: '780 kg'
-    }
-  ]);
+  // Fetch driver info and airport delivery assignments
+  useEffect(() => {
+    const fetchDriverAirportDeliveries = async () => {
+      if (!id) return;
+
+      try {
+        setLoading(true);
+
+        // Fetch driver information
+        const driverResponse = await getDriverById(id);
+        if (driverResponse.success && driverResponse.data) {
+          setDriverInfo(driverResponse.data);
+        }
+
+        // Fetch all orders
+        const ordersResponse = await getAllOrders();
+
+        if (!ordersResponse.success || !ordersResponse.data) {
+          setOrders([]);
+          return;
+        }
+
+        const transformedOrders = [];
+
+        for (const order of ordersResponse.data) {
+          try {
+            const assignmentResponse = await getOrderAssignment(order.oid);
+
+            if (!assignmentResponse.success || !assignmentResponse.data) continue;
+
+            const assignmentData = assignmentResponse.data;
+
+            // Parse stage3_summary_data
+            let stage3Data = null;
+            if (assignmentData.stage3_summary_data) {
+              try {
+                stage3Data = typeof assignmentData.stage3_summary_data === 'string'
+                  ? JSON.parse(assignmentData.stage3_summary_data)
+                  : assignmentData.stage3_summary_data;
+              } catch (e) {
+                console.error('Error parsing stage3_summary_data:', e);
+                continue;
+              }
+            }
+
+            if (!stage3Data || !stage3Data.driverAssignments) continue;
+
+            // Find assignments for this specific driver
+            const driverAssignment = stage3Data.driverAssignments.find(
+              da => {
+                const driverStr = String(da.driver);
+                const idStr = String(id);
+
+                // Try multiple matching strategies
+                if (driverStr === idStr) return true;
+                if (driverStr.includes(' - ')) {
+                  const parts = driverStr.split(' - ');
+                  const extractedId = parts[parts.length - 1];
+                  if (extractedId === idStr) return true;
+                }
+                if (driverStr.includes(idStr)) return true;
+
+                return false;
+              }
+            );
+
+            if (!driverAssignment || !driverAssignment.assignments) continue;
+
+            // Create order entries for each airport assignment
+            driverAssignment.assignments.forEach((assignment, index) => {
+              // Only include airport deliveries
+              if (assignment.airportName && assignment.airportLocation) {
+                // Find the original order item to get totalBoxes
+                const orderItem = order.items?.find(item => item.oiid === assignment.oiid);
+                const parseNumBoxes = (numBoxesStr) => {
+                  if (!numBoxesStr) return 0;
+                  const match = String(numBoxesStr).match(/^(\d+(?:\.\d+)?)/);
+                  return match ? parseFloat(match[1]) : 0;
+                };
+                const totalBoxes = orderItem ? parseNumBoxes(orderItem.num_boxes) : 0;
+
+                transformedOrders.push({
+                  id: `${order.oid}-${index}`,
+                  orderId: order.oid,
+                  type: 'Line Airport',
+                  pickup: {
+                    name: 'Warehouse',
+                    location: 'Packing Center'
+                  },
+                  airport: {
+                    name: assignment.airportName,
+                    terminal: assignment.airportLocation || 'Cargo Terminal'
+                  },
+                  flightTime: 'N/A',
+                  timeInfo: order.createdAt ? getTimeAgo(order.createdAt) : 'N/A',
+                  status: assignment.status || 'Assigned',
+                  weight: `${assignment.noOfPkgs || 0} pkgs`,
+                  product: assignment.product,
+                  ct: assignment.ct,
+                  grossWeight: assignment.grossWeight,
+                  labour: assignment.labour,
+                  totalBoxes: totalBoxes,
+                  noOfPkgs: assignment.noOfPkgs,
+                  vehicleNumber: driverAssignment.vehicleNumber || '',
+                  phoneNumber: driverAssignment.phoneNumber || '',
+                  assignmentData: assignment,
+                  orderData: order,
+                  driverData: driverAssignment
+                });
+              }
+            });
+          } catch (orderError) {
+            console.error(`Error processing order ${order.oid}:`, orderError);
+          }
+        }
+
+        setOrders(transformedOrders);
+      } catch (error) {
+        console.error('Error fetching driver airport deliveries:', error);
+        setOrders([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDriverAirportDeliveries();
+  }, [id]);
+
+  // Helper function to calculate time ago
+  const getTimeAgo = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 60) return `${diffMins} mins ago`;
+    if (diffHours < 24) return `${diffHours} hrs ago`;
+    if (diffDays === 0) return 'Today';
+    return `${diffDays} days ago`;
+  };
 
 
 
@@ -109,7 +190,7 @@ const DriverAirportDeliveryPage = () => {
   };
 
   const handleStatusChange = (orderId, newStatus) => {
-    setOrders(orders.map(order => 
+    setOrders(orders.map(order =>
       order.id === orderId ? { ...order, status: newStatus } : order
     ));
   };
@@ -218,11 +299,83 @@ const DriverAirportDeliveryPage = () => {
     return sum + parseInt(order.weight);
   }, 0);
 
+  // Export to Excel function
+  const handleExportToExcel = () => {
+    if (orders.length === 0) {
+      alert('No data to export');
+      return;
+    }
+
+    // Prepare data for export
+    const exportData = orders.map((order, index) => ({
+      'S.No': index + 1,
+      'Order ID': order.orderId,
+      'Product': order.product || 'N/A',
+      'Gross Weight': order.grossWeight || 'N/A',
+      'Assigned Labour': order.labour || 'N/A',
+      'Total Boxes/Bags': order.totalBoxes || 0,
+      'CT': order.ct || 'N/A',
+      'No of Pkgs': order.noOfPkgs || 0,
+      'Airport Name': order.airport.name,
+      'Airport Location': order.airport.terminal,
+      'Vehicle Number': order.vehicleNumber || 'N/A',
+      'Status': order.status
+    }));
+
+    // Add summary row
+    const totalPkgs = orders.reduce((sum, order) => sum + (order.noOfPkgs || 0), 0);
+    const totalBoxes = orders.reduce((sum, order) => sum + (order.totalBoxes || 0), 0);
+
+    exportData.push({
+      'S.No': '',
+      'Order ID': '',
+      'Product': '',
+      'Gross Weight': '',
+      'Assigned Labour': 'TOTAL',
+      'Total Boxes/Bags': totalBoxes,
+      'CT': '',
+      'No of Pkgs': totalPkgs,
+      'Airport Name': '',
+      'Airport Location': '',
+      'Vehicle Number': '',
+      'Status': ''
+    });
+
+    // Create worksheet
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+
+    // Auto-size columns
+    worksheet['!cols'] = [
+      { wch: 6 },  // S.No
+      { wch: 15 }, // Order ID
+      { wch: 20 }, // Product
+      { wch: 15 }, // Gross Weight
+      { wch: 20 }, // Assigned Labour
+      { wch: 18 }, // Total Boxes/Bags
+      { wch: 12 }, // CT
+      { wch: 12 }, // No of Pkgs
+      { wch: 25 }, // Airport Name
+      { wch: 25 }, // Airport Location
+      { wch: 18 }, // Vehicle Number
+      { wch: 12 }  // Status
+    ];
+
+    // Create workbook
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Airport Deliveries');
+
+    // Generate filename
+    const fileName = `Driver_${id}_Airport_Deliveries_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+    // Download file
+    XLSX.writeFile(workbook, fileName);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-center justify-between mb-6">
           <button
             onClick={() => navigate('/drivers')}
             className="flex items-center gap-2 text-[#0D5C4D] hover:text-[#0a6354] transition-colors"
@@ -230,20 +383,28 @@ const DriverAirportDeliveryPage = () => {
             <ArrowLeft className="w-5 h-5" />
             <span className="font-medium">Back to Driver Management</span>
           </button>
+
+          <button
+            onClick={handleExportToExcel}
+            className="px-6 py-2.5 bg-[#10B981] text-white rounded-lg hover:bg-[#059669] transition-colors duration-200 font-medium flex items-center gap-2"
+          >
+            <FileDown className="w-4 h-4" />
+            Export to Excel
+          </button>
         </div>
-        
+
 
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6 overflow-x-auto">
           <button
-            onClick={() => navigate('/drivers/1')}
+            onClick={() => navigate(`/drivers/${id}`)}
             className="px-6 py-2.5 rounded-lg font-medium transition-all text-sm whitespace-nowrap bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
           >
             Driver Details
           </button>
           <button
-            onClick={() => navigate('/drivers/1/local-pickups')}
+            onClick={() => navigate(`/drivers/${id}/local-pickups`)}
             className="px-6 py-2.5 rounded-lg font-medium transition-all text-sm whitespace-nowrap bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
           >
             Local Pickups
@@ -278,7 +439,7 @@ const DriverAirportDeliveryPage = () => {
             Remarks
           </button>
           <button
-            onClick={() => navigate('/drivers/1/daily-payout')}
+            onClick={() => navigate(`/drivers/${id}/daily-payout`)}
             className="px-6 py-2.5 rounded-lg font-medium transition-all text-sm bg-white text-gray-600 hover:bg-gray-50 border border-gray-200 whitespace-nowrap"
           >
             Daily Payout
@@ -286,58 +447,91 @@ const DriverAirportDeliveryPage = () => {
         </div>
 
         {/* Content Area */}
-          <div className="bg-white rounded-2xl overflow-hidden border border-[#D0E0DB]">
+        <div className="bg-white rounded-2xl overflow-hidden border border-[#D0E0DB]">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="bg-[#D4F4E8]">
                   <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Order ID</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Pickup (Packing Center)</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Airport</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Flight Time</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Product</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Gross Weight</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Assigned Labour</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Total Boxes/Bags</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">CT</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">No of Pkgs</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Airport Name</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Vehicle Number</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Status</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Weight</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {orders.map((order, index) => (
-                  <tr key={index} className={`border-b border-[#D0E0DB] hover:bg-[#F0F4F3] transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-[#F0F4F3]/30'}`}>
-                    <td className="px-6 py-4">
-                      <div className="font-semibold text-[#0D5C4D] text-sm">{order.id}</div>
-                      <div className="text-xs text-[#6B8782]">{order.type}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-[#0D5C4D] text-sm">{order.pickup.name}</div>
-                      <div className="text-xs text-[#6B8782]">{order.pickup.location}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-[#0D5C4D] text-sm">{order.airport.name}</div>
-                      <div className="text-xs text-[#6B8782]">{order.airport.terminal}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="font-semibold text-[#0D5C4D] text-sm">{order.flightTime}</div>
-                      <div className={`text-xs ${
-                        order.timeInfo.includes('left') 
-                          ? 'text-orange-600 font-medium' 
-                          : 'text-[#6B8782]'
-                      }`}>
-                        {order.timeInfo}
+                {loading ? (
+                  <tr>
+                    <td colSpan="10" className="px-6 py-12 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-5 h-5 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-sm text-gray-600">Loading airport deliveries...</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
-                        {order.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="font-semibold text-[#0D5C4D] text-sm">{order.weight}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {getActionButton(order)}
+                  </tr>
+                ) : orders.length === 0 ? (
+                  <tr>
+                    <td colSpan="10" className="px-6 py-12 text-center text-sm text-gray-600">
+                      No airport delivery assignments found for this driver.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  orders.map((order, index) => (
+                    <tr key={index} className={`border-b border-[#D0E0DB] hover:bg-[#F0F4F3] transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-[#F0F4F3]/30'}`}>
+                      <td className="px-6 py-4">
+                        <div className="font-semibold text-[#0D5C4D] text-sm">{order.orderId}</div>
+                        <div className="text-xs text-[#6B8782]">{order.type}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-medium text-[#0D5C4D] text-sm">{order.product || 'N/A'}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-semibold text-[#0D5C4D] text-sm">
+                          {order.grossWeight || order.assignmentData?.grossWeight || 'N/A'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-medium text-[#0D5C4D] text-sm">
+                          {order.labour || order.assignmentData?.labour || 'N/A'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-semibold text-[#0D5C4D] text-sm">
+                          {order.totalBoxes || 0}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-medium text-[#0D5C4D] text-sm">
+                          {order.ct || order.assignmentData?.ct || 'N/A'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-semibold text-[#0D5C4D] text-sm">
+                          {order.noOfPkgs || order.assignmentData?.noOfPkgs || 0}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-medium text-[#0D5C4D] text-sm">{order.airport.name}</div>
+                        <div className="text-xs text-[#6B8782]">{order.airport.terminal}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-medium text-[#0D5C4D] text-sm">
+                          {order.vehicleNumber || 'N/A'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
+                          {order.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -351,7 +545,7 @@ const DriverAirportDeliveryPage = () => {
               Total Cargo: <span className="text-[#0D7C66]">{totalWeight.toLocaleString()} kg</span>
             </div>
           </div>
-          </div>
+        </div>
       </div>
 
       {/* Start Kilometer Modal */}

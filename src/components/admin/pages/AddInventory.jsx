@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createInventory } from '../../../api/inventoryApi';
+import { getAllCompanies } from '../../../api/inventoryCompanyApi';
 
 const AddInventory = ({ onClose, onAdd }) => {
   const [formData, setFormData] = useState({
@@ -7,14 +8,27 @@ const AddInventory = ({ onClose, onAdd }) => {
     category: '',
     weight: '',
     unit: '',
-    price: '',
     color: ''
   });
 
   const [errors, setErrors] = useState({});
+  const [companies, setCompanies] = useState([]);
 
   const categories = ['Boxes', 'Bags', 'Tape', 'Paper', 'Plastic Covers'];
   const units = ['kg', 'm', 'pcs', 'ltr'];
+
+  useEffect(() => {
+    fetchCompanies();
+  }, []);
+
+  const fetchCompanies = async () => {
+    try {
+      const response = await getAllCompanies();
+      setCompanies(response.data || []);
+    } catch (error) {
+      console.error('Error fetching companies:', error);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -41,27 +55,24 @@ const AddInventory = ({ onClose, onAdd }) => {
       if (!formData.weight || formData.weight <= 0) newErrors.weight = 'Valid weight/quantity is required';
       if (!formData.unit) newErrors.unit = 'Unit type is required';
     }
-    if (!formData.price || formData.price <= 0) newErrors.price = 'Valid price is required';
+
     return newErrors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = validate();
-    
+
     if (Object.keys(newErrors).length === 0) {
       try {
         const itemData = {
           name: formData.name,
           category: formData.category,
-          price: parseFloat(formData.price)
+          weight: formData.category === 'Tape' ? null : parseFloat(formData.weight),
+          unit: formData.category === 'Tape' ? null : formData.unit,
+          color: formData.category === 'Tape' ? formData.color : null
         };
-        if (formData.category === 'Tape') {
-          itemData.color = formData.color;
-        } else {
-          itemData.weight = parseFloat(formData.weight);
-          itemData.unit = formData.unit;
-        }
+
         await createInventory(itemData);
         onAdd();
         onClose();
@@ -105,9 +116,8 @@ const AddInventory = ({ onClose, onAdd }) => {
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="Enter product name"
-                className={`w-full px-4 py-2.5 border ${
-                  errors.name ? 'border-red-500' : 'border-gray-300'
-                } rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm placeholder-gray-400`}
+                className={`w-full px-4 py-2.5 border ${errors.name ? 'border-red-500' : 'border-gray-300'
+                  } rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm placeholder-gray-400`}
               />
               {errors.name && (
                 <p className="mt-1 text-xs text-red-500">{errors.name}</p>
@@ -125,11 +135,9 @@ const AddInventory = ({ onClose, onAdd }) => {
                   name="category"
                   value={formData.category}
                   onChange={handleChange}
-                  className={`w-full px-4 py-2.5 border ${
-                    errors.category ? 'border-red-500' : 'border-gray-300'
-                  } rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm appearance-none bg-white cursor-pointer ${
-                    !formData.category ? 'text-gray-400' : 'text-gray-900'
-                  }`}
+                  className={`w-full px-4 py-2.5 border ${errors.category ? 'border-red-500' : 'border-gray-300'
+                    } rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm appearance-none bg-white cursor-pointer ${!formData.category ? 'text-gray-400' : 'text-gray-900'
+                    }`}
                 >
                   <option value="">Select category</option>
                   {categories.map(cat => (
@@ -163,9 +171,8 @@ const AddInventory = ({ onClose, onAdd }) => {
                   value={formData.color}
                   onChange={handleChange}
                   placeholder="Enter color"
-                  className={`w-full px-4 py-2.5 border ${
-                    errors.color ? 'border-red-500' : 'border-gray-300'
-                  } rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm placeholder-gray-400`}
+                  className={`w-full px-4 py-2.5 border ${errors.color ? 'border-red-500' : 'border-gray-300'
+                    } rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm placeholder-gray-400`}
                 />
                 {errors.color && (
                   <p className="mt-1 text-xs text-red-500">{errors.color}</p>
@@ -175,88 +182,63 @@ const AddInventory = ({ onClose, onAdd }) => {
 
             {/* Weight/Quantity and Unit Type - Hidden for Tape */}
             {formData.category !== 'Tape' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Weight/Quantity per Unit
-                  <span className="text-red-500 ml-1">*</span>
-                </label>
-                <input
-                  type="number"
-                  name="weight"
-                  value={formData.weight}
-                  onChange={handleChange}
-                  placeholder="0"
-                  min="0"
-                  step="0.01"
-                  className={`w-full px-4 py-2.5 border ${
-                    errors.weight ? 'border-red-500' : 'border-gray-300'
-                  } rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm placeholder-gray-400`}
-                />
-                {errors.weight && (
-                  <p className="mt-1 text-xs text-red-500">{errors.weight}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Unit Type
-                  <span className="text-red-500 ml-1">*</span>
-                </label>
-                <div className="relative">
-                  <select
-                    name="unit"
-                    value={formData.unit}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Weight per Unit
+                    <span className="text-red-500 ml-1">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    name="weight"
+                    value={formData.weight}
                     onChange={handleChange}
-                    className={`w-full px-4 py-2.5 border ${
-                      errors.unit ? 'border-red-500' : 'border-gray-300'
-                    } rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm appearance-none bg-white cursor-pointer ${
-                      !formData.unit ? 'text-gray-400' : 'text-gray-900'
-                    }`}
-                  >
-                    <option value="">Select unit</option>
-                    {units.map(unit => (
-                      <option key={unit} value={unit} className="text-gray-900">{unit}</option>
-                    ))}
-                  </select>
-                  <svg
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+                    placeholder="0"
+                    min="0"
+                    step="0.01"
+                    className={`w-full px-4 py-2.5 border ${errors.weight ? 'border-red-500' : 'border-gray-300'
+                      } rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm placeholder-gray-400`}
+                  />
+                  {errors.weight && (
+                    <p className="mt-1 text-xs text-red-500">{errors.weight}</p>
+                  )}
                 </div>
-                {errors.unit && (
-                  <p className="mt-1 text-xs text-red-500">{errors.unit}</p>
-                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Unit Type
+                    <span className="text-red-500 ml-1">*</span>
+                  </label>
+                  <div className="relative">
+                    <select
+                      name="unit"
+                      value={formData.unit}
+                      onChange={handleChange}
+                      className={`w-full px-4 py-2.5 border ${errors.unit ? 'border-red-500' : 'border-gray-300'
+                        } rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm appearance-none bg-white cursor-pointer ${!formData.unit ? 'text-gray-400' : 'text-gray-900'
+                        }`}
+                    >
+                      <option value="">Select unit</option>
+                      {units.map(unit => (
+                        <option key={unit} value={unit} className="text-gray-900">{unit}</option>
+                      ))}
+                    </select>
+                    <svg
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                  {errors.unit && (
+                    <p className="mt-1 text-xs text-red-500">{errors.unit}</p>
+                  )}
+                </div>
               </div>
-            </div>
             )}
 
-            {/* Price per Unit */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Price per Unit (₹)
-                <span className="text-red-500 ml-1">*</span>
-              </label>
-              <input
-                type="number"
-                name="price"
-                value={formData.price}
-                onChange={handleChange}
-                placeholder="0.00"
-                min="0"
-                step="0.01"
-                className={`w-full px-4 py-2.5 border ${
-                  errors.price ? 'border-red-500' : 'border-gray-300'
-                } rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm placeholder-gray-400`}
-              />
-              {errors.price && (
-                <p className="mt-1 text-xs text-red-500">{errors.price}</p>
-              )}
-            </div>
           </div>
 
           {/* Action Buttons */}

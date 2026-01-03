@@ -157,13 +157,13 @@ const OrderAssignManagement = () => {
                   Customer
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  Order Type
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  Order Received Date
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   Products
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Assigned To
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Driver
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                   Amount
@@ -189,6 +189,16 @@ const OrderAssignManagement = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4">
+                    <span className={`px-3 py-1.5 rounded-full text-xs font-medium capitalize ${
+                      order.order_type === 'flight' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
+                    }`}>
+                      {order.order_type || 'N/A'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-sm text-gray-900">{order.order_received_date || 'N/A'}</span>
+                  </td>
+                  <td className="px-6 py-4">
                     <div className="flex flex-wrap gap-2">
                       {order.items && order.items.slice(0, 2).map((item, idx) => (
                         <span
@@ -203,22 +213,6 @@ const OrderAssignManagement = () => {
                           +{order.items.length - 2}
                         </span>
                       )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {assignments[order.oid] ? 'Assigned' : 'Not Assigned'}
-                      </p>
-                      <p className="text-xs text-gray-500"></p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div>
-                      <p className={`text-sm font-medium ${assignments[order.oid] ? 'text-gray-900' : 'text-gray-500 italic'}`}>
-                        {assignments[order.oid] ? 'Assigned' : 'Not Assigned'}
-                      </p>
-                      <p className="text-xs text-gray-500"></p>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -239,22 +233,40 @@ const OrderAssignManagement = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     {(() => {
                       const isStage1Completed = assignments[order.oid]?.stage1_status === 'completed';
+                      const isLocalOrder = order.order_type === 'local';
                       console.log(`Order ${order.oid}: stage1_status =`, assignments[order.oid]?.stage1_status, ', showing Edit:', isStage1Completed);
-                      return isStage1Completed ? (
-                        <button
-                          onClick={() => navigate(`/order-assign/stage1/${order.oid}`, { state: { orderData: order } })}
-                          className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
-                        >
-                          Edit
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => navigate(`/order-assign/stage1/${order.oid}`, { state: { orderData: order } })}
-                          className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors"
-                        >
-                          Assign
-                        </button>
-                      );
+                      
+                      if (isStage1Completed) {
+                        return (
+                          <button
+                            onClick={() => {
+                              if (isLocalOrder) {
+                                navigate(`/order-assign/local/${order.oid}`, { state: { orderData: order } });
+                              } else {
+                                navigate(`/order-assign/stage1/${order.oid}`, { state: { orderData: order } });
+                              }
+                            }}
+                            className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+                          >
+                            Edit
+                          </button>
+                        );
+                      } else {
+                        return (
+                          <button
+                            onClick={() => {
+                              if (isLocalOrder) {
+                                navigate(`/order-assign/local/${order.oid}`, { state: { orderData: order } });
+                              } else {
+                                navigate(`/order-assign/stage1/${order.oid}`, { state: { orderData: order } });
+                              }
+                            }}
+                            className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors"
+                          >
+                            Assign
+                          </button>
+                        );
+                      }
                     })()}
                   </td>
                 </tr>

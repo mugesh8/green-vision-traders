@@ -46,6 +46,8 @@ const OrderManagement = () => {
           // Transform the data to match the existing structure
           const transformedOrders = response.data.map(order => ({
             id: order.oid,
+            orderId: order.order_id,
+            orderReceivedDate: order.order_received_date,
             customer: order.customer_name,
             boxes: order.items[0]?.num_boxes || 'N/A',
             packing: order.items.map(item => item.packing_type).filter(Boolean)[0] || 'N/A',
@@ -250,6 +252,8 @@ const OrderManagement = () => {
       if (response.success) {
         const transformedOrders = response.data.map(order => ({
           id: order.oid,
+          orderId: order.order_id,
+          orderReceivedDate: order.order_received_date,
           customer: order.customer_name,
           boxes: order.items[0]?.num_boxes || 'N/A',
           packing: order.items.map(item => item.packing_type).filter(Boolean)[0] || 'N/A',
@@ -550,6 +554,9 @@ const OrderManagement = () => {
                     Order ID
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D7C66] uppercase tracking-wider">
+                    Order Received Date
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D7C66] uppercase tracking-wider">
                     Customer
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-[#0D7C66] uppercase tracking-wider">
@@ -590,7 +597,10 @@ const OrderManagement = () => {
                       className="hover:bg-gray-50 transition-colors duration-150"
                     >
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {order.id}
+                        {order.orderId || order.id}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        {order.orderReceivedDate ? new Date(order.orderReceivedDate).toLocaleDateString() : '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                         {order.customer}

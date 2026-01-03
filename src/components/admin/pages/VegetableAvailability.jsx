@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Plus, Edit2, Trash2, Eye } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getFarmerById } from '../../../api/farmerApi';
-import { getAllProducts } from '../../../api/productApi';
 import { createVegetableAvailability, getVegetableAvailabilityByFarmer, updateVegetableAvailability, deleteVegetableAvailability } from '../../../api/vegetableAvailabilityApi';
 
 const VegetableAvailability = () => {
@@ -27,13 +26,13 @@ const VegetableAvailability = () => {
 
   const fetchData = async () => {
     try {
-      const [farmerRes, productsRes, availabilityRes] = await Promise.all([
+      const [farmerRes, availabilityRes] = await Promise.all([
         getFarmerById(id),
-        getAllProducts(1, 100),
         getVegetableAvailabilityByFarmer(id)
       ]);
       setFarmer(farmerRes.data);
-      setProducts(productsRes.data || []);
+      const farmerProducts = JSON.parse(farmerRes.data.product_list || '[]');
+      setProducts(farmerProducts);
       setAvailabilities(availabilityRes.data || []);
     } catch (error) {
       console.error('Failed to fetch data:', error);

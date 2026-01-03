@@ -112,8 +112,7 @@ const ThirdPartyManagement = () => {
       contact: `+91 ${thirdParty.phone}`,
       email: thirdParty.email,
       location: `${thirdParty.city}, ${thirdParty.state}`,
-      status: thirdParty.status.charAt(0).toUpperCase() + thirdParty.status.slice(1),
-      dues: '₹0' // This would need to be calculated based on actual data
+      status: thirdParty.status.charAt(0).toUpperCase() + thirdParty.status.slice(1)
     }));
   };
 
@@ -232,7 +231,6 @@ const ThirdPartyManagement = () => {
                 <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Contact</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Location</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Status</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Dues</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Action</th>
               </tr>
             </thead>
@@ -303,12 +301,6 @@ const ThirdPartyManagement = () => {
                       <div className="w-2 h-2 rounded-full bg-white"></div>
                       {thirdParty.status}
                     </span>
-                  </td>
-
-                  <td className="px-6 py-4">
-                    <div className={`text-sm font-semibold ${thirdParty.dues === '₹0' ? 'text-[#047857]' : 'text-red-600'}`}>
-                      {thirdParty.dues}
-                    </div>
                   </td>
 
                   <td className="px-6 py-4">

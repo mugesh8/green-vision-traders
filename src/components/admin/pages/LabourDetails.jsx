@@ -70,6 +70,21 @@ const LabourDetails = () => {
             <span>Back to Labours</span>
           </button>
         </div>
+
+        {/* Tabs */}
+        <div className="flex gap-2 overflow-x-auto">
+          <button
+            className="px-6 py-2.5 rounded-lg font-medium transition-all text-sm whitespace-nowrap bg-teal-600 text-white shadow-md"
+          >
+            Labour Details
+          </button>
+          <button
+            onClick={() => navigate(`/labour/${id}/daily-works`)}
+            className="px-6 py-2.5 rounded-lg font-medium transition-all text-sm whitespace-nowrap bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
+          >
+            Daily Works
+          </button>
+        </div>
       </div>
 
       {/* Labour Profile Card */}
@@ -90,7 +105,7 @@ const LabourDetails = () => {
             ) : null}
             <span className={`text-white text-3xl font-bold ${labour?.profileImage ? 'hidden' : ''}`}>{labour?.name?.substring(0, 2).toUpperCase() || 'LB'}</span>
           </div>
-          
+
           {/* Labour Info */}
           <div className="flex-1">
             <h2 className="text-2xl font-bold text-gray-800 mb-2">{labour?.name || 'N/A'}</h2>
@@ -110,17 +125,15 @@ const LabourDetails = () => {
             <span className="bg-teal-50 text-teal-700 px-4 py-1 rounded-full text-sm font-medium border border-teal-200">
               {labour?.department || 'Worker'}
             </span>
-            <span className={`px-4 py-1 rounded-full text-sm font-medium border flex items-center gap-2 ${
-              labour?.status === 'Present' 
-                ? 'bg-green-50 text-green-700 border-green-200' 
+            <span className={`px-4 py-1 rounded-full text-sm font-medium border flex items-center gap-2 ${labour?.status === 'Present'
+                ? 'bg-green-50 text-green-700 border-green-200'
                 : labour?.status === 'Absent'
-                ? 'bg-red-50 text-red-700 border-red-200'
-                : 'bg-orange-50 text-orange-700 border-orange-200'
-            }`}>
-              <span className={`w-2 h-2 rounded-full ${
-                labour?.status === 'Present' ? 'bg-green-500' : 
-                labour?.status === 'Absent' ? 'bg-red-500' : 'bg-orange-500'
-              }`}></span>
+                  ? 'bg-red-50 text-red-700 border-red-200'
+                  : 'bg-orange-50 text-orange-700 border-orange-200'
+              }`}>
+              <span className={`w-2 h-2 rounded-full ${labour?.status === 'Present' ? 'bg-green-500' :
+                  labour?.status === 'Absent' ? 'bg-red-500' : 'bg-orange-500'
+                }`}></span>
               {labour?.status || 'Unknown'}
             </span>
           </div>
@@ -135,33 +148,33 @@ const LabourDetails = () => {
             <User className="w-5 h-5 text-teal-600" />
             <h3 className="text-lg font-semibold text-gray-800">Personal Information</h3>
           </div>
-          
+
           <div className="space-y-4">
             <div>
               <p className="text-xs font-medium text-gray-500 uppercase mb-1">Full Name</p>
               <p className="text-gray-800">{labour?.name || 'N/A'}</p>
             </div>
-            
+
             <div>
               <p className="text-xs font-medium text-gray-500 uppercase mb-1">Mobile Number</p>
               <p className="text-gray-800">{labour?.phone || 'N/A'}</p>
             </div>
-            
+
             <div>
               <p className="text-xs font-medium text-gray-500 uppercase mb-1">Aadhaar Number</p>
               <p className="text-gray-800">{labour?.aadhaarNumber || 'N/A'}</p>
             </div>
-            
+
             <div>
               <p className="text-xs font-medium text-gray-500 uppercase mb-1">Date of Birth</p>
               <p className="text-gray-800">{labour?.dateOfBirth || 'N/A'}</p>
             </div>
-            
+
             <div>
               <p className="text-xs font-medium text-gray-500 uppercase mb-1">Gender</p>
               <p className="text-gray-800">{labour?.gender || 'N/A'}</p>
             </div>
-            
+
             <div>
               <p className="text-xs font-medium text-gray-500 uppercase mb-1">Blood Group</p>
               <p className="text-gray-800">{labour?.bloodGroup || 'N/A'}</p>
@@ -175,25 +188,25 @@ const LabourDetails = () => {
             <TrendingUp className="w-5 h-5 text-teal-600" />
             <h3 className="text-lg font-semibold text-gray-800">Work Details</h3>
           </div>
-          
+
           <div className="space-y-4">
             <div>
               <p className="text-xs font-medium text-gray-500 uppercase mb-1">Work Type</p>
               <p className="text-gray-800">{labour?.workType || 'N/A'}</p>
             </div>
-            
+
             <div>
               <p className="text-xs font-medium text-gray-500 uppercase mb-1">Department</p>
               <span className="bg-teal-100 text-teal-700 px-3 py-1 rounded-full text-sm font-medium">
                 {labour?.department || 'N/A'}
               </span>
             </div>
-            
+
             <div>
               <p className="text-xs font-medium text-gray-500 uppercase mb-1">Daily Wage</p>
               <p className="text-gray-800 font-semibold">{labour?.dailyWage || 'N/A'}</p>
             </div>
-            
+
             <div>
               <p className="text-xs font-medium text-gray-500 uppercase mb-1">Joining Date</p>
               <p className="text-gray-800">{labour?.joiningDate || 'N/A'}</p>
@@ -208,7 +221,7 @@ const LabourDetails = () => {
           <MapPin className="w-5 h-5 text-red-500" />
           <h3 className="text-lg font-semibold text-gray-800">Address Details</h3>
         </div>
-        
+
         <div>
           <p className="text-xs font-medium text-gray-500 uppercase mb-1">Full Address</p>
           <p className="text-gray-800">{labour?.address || 'N/A'}</p>
@@ -219,4 +232,3 @@ const LabourDetails = () => {
 };
 
 export default LabourDetails;
-            

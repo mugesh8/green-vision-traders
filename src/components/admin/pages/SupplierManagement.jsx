@@ -201,20 +201,19 @@ const SupplierDashboard = () => {
                 <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Contact</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Location</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Status</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Dues</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Action</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-8 text-center text-[#6B8782]">
+                  <td colSpan="6" className="px-6 py-8 text-center text-[#6B8782]">
                     Loading suppliers...
                   </td>
                 </tr>
               ) : suppliers.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-8 text-center text-[#6B8782]">
+                  <td colSpan="6" className="px-6 py-8 text-center text-[#6B8782]">
                     No suppliers found
                   </td>
                 </tr>
@@ -286,12 +285,6 @@ const SupplierDashboard = () => {
                       <div className="w-2 h-2 rounded-full bg-white"></div>
                       {supplier.status === 'active' ? 'Active' : 'Inactive'}
                     </span>
-                  </td>
-
-                  <td className="px-6 py-4">
-                    <div className="text-sm font-semibold text-[#047857]">
-                      ₹0
-                    </div>
                   </td>
 
                   <td className="px-6 py-4">

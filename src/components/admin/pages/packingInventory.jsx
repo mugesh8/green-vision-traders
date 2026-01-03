@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import AddInventory from './AddInventory';
 import EditInventory from './EditInventory';
 import ConfirmDeleteModal from '../../common/ConfirmDeleteModal';
 import { getAllInventory, deleteInventory } from '../../../api/inventoryApi';
+import { getInventoryQuantities } from '../../../api/inventoryStockApi';
 
 const PackingInventory = () => {
   const navigate = useNavigate();
@@ -15,6 +16,8 @@ const PackingInventory = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [openActionMenu, setOpenActionMenu] = useState(null);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+  const buttonRefs = useRef({});
   const [inventoryItems, setInventoryItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [totalPages, setTotalPages] = useState(1);
@@ -44,6 +47,22 @@ const PackingInventory = () => {
     setSelectedItem(item);
     setIsEditModalOpen(true);
     setOpenActionMenu(null);
+  };
+
+  const handleActionMenuToggle = (itemId) => {
+    if (openActionMenu === itemId) {
+      setOpenActionMenu(null);
+    } else {
+      const button = buttonRefs.current[itemId];
+      if (button) {
+        const rect = button.getBoundingClientRect();
+        setMenuPosition({
+          top: rect.bottom + window.scrollY,
+          left: rect.right - 128 + window.scrollX
+        });
+      }
+      setOpenActionMenu(itemId);
+    }
   };
 
   const handleDelete = (id, name) => {
@@ -103,53 +122,57 @@ const PackingInventory = () => {
       {/* Tabs */}
       <div className="px-6 sm:px-8 py-4">
         <div className="flex flex-wrap gap-2">
-          <button 
+          <button
             onClick={() => navigate('/settings')}
-            className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-colors ${
-              location.pathname === '/settings' 
-                ? 'bg-[#0D7C66] text-white' 
-                : 'bg-[#D4F4E8] text-[#0D5C4D] hover:bg-[#B8F4D8]'
-            }`}
+            className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-colors ${location.pathname === '/settings'
+              ? 'bg-[#0D7C66] text-white'
+              : 'bg-[#D4F4E8] text-[#0D5C4D] hover:bg-[#B8F4D8]'
+              }`}
           >
-            Packing Inventory
+            Inventory Management
           </button>
-          <button 
-            onClick={() => navigate('/settings/airport')}
-            className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-colors ${
-              location.pathname === '/settings/airport' 
-                ? 'bg-[#0D7C66] text-white' 
+          <button
+            onClick={() => navigate('/settings/inventory-company')}
+            className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-colors ${location.pathname === '/settings/inventory-company'
+                ? 'bg-[#0D7C66] text-white'
                 : 'bg-[#D4F4E8] text-[#0D5C4D] hover:bg-[#B8F4D8]'
-            }`}
+              }`}
+          >
+            Inventory Company
+          </button>
+          <button
+            onClick={() => navigate('/settings/airport')}
+            className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-colors ${location.pathname === '/settings/airport'
+              ? 'bg-[#0D7C66] text-white'
+              : 'bg-[#D4F4E8] text-[#0D5C4D] hover:bg-[#B8F4D8]'
+              }`}
           >
             Airport Locations
           </button>
-          <button 
+          <button
             onClick={() => navigate('/settings/petroleum')}
-            className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-colors ${
-              location.pathname === '/settings/petroleum' 
-                ? 'bg-[#0D7C66] text-white' 
-                : 'bg-[#D4F4E8] text-[#0D5C4D] hover:bg-[#B8F4D8]'
-            }`}
+            className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-colors ${location.pathname === '/settings/petroleum'
+              ? 'bg-[#0D7C66] text-white'
+              : 'bg-[#D4F4E8] text-[#0D5C4D] hover:bg-[#B8F4D8]'
+              }`}
           >
             Petroleum Management
           </button>
-          <button 
+          <button
             onClick={() => navigate('/settings/labour-rate')}
-            className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-colors ${
-              location.pathname === '/settings/labour-rate' 
-                ? 'bg-[#0D7C66] text-white' 
-                : 'bg-[#D4F4E8] text-[#0D5C4D] hover:bg-[#B8F4D8]'
-            }`}
+            className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-colors ${location.pathname === '/settings/labour-rate'
+              ? 'bg-[#0D7C66] text-white'
+              : 'bg-[#D4F4E8] text-[#0D5C4D] hover:bg-[#B8F4D8]'
+              }`}
           >
             Labour Rate
           </button>
-          <button 
+          <button
             onClick={() => navigate('/settings/driver-rate')}
-            className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-colors ${
-              location.pathname === '/settings/driver-rate' 
-                ? 'bg-[#0D7C66] text-white' 
-                : 'bg-[#D4F4E8] text-[#0D5C4D] hover:bg-[#B8F4D8]'
-            }`}
+            className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-colors ${location.pathname === '/settings/driver-rate'
+              ? 'bg-[#0D7C66] text-white'
+              : 'bg-[#D4F4E8] text-[#0D5C4D] hover:bg-[#B8F4D8]'
+              }`}
           >
             Driver Rate
           </button>
@@ -226,7 +249,7 @@ const PackingInventory = () => {
                   className="flex-1 sm:flex-none px-5 py-2.5 bg-emerald-500 text-white rounded-lg font-medium text-sm hover:bg-emerald-600 transition-colors flex items-center justify-center gap-2"
                 >
                   <span className="text-lg">+</span>
-                  Add Item
+                  Add Inventory
                 </button>
                 <button
                   onClick={handleExport}
@@ -241,7 +264,7 @@ const PackingInventory = () => {
 
         {/* Table */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto overflow-y-visible">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
@@ -252,10 +275,10 @@ const PackingInventory = () => {
                     Category
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Weight/Unit/Color
+                    Weight/Unit
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Price/Unit
+                    Total Stock Quantity
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Action
@@ -270,10 +293,13 @@ const PackingInventory = () => {
                     <td className="px-6 py-4 text-sm text-gray-600">
                       {item.category === 'Tape' ? item.color : `${item.weight} ${item.unit}`}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">₹{item.price}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600 relative">
+                    <td className="px-6 py-4 text-sm">
+                      <span className="font-semibold text-emerald-600">{item.quantity || 0}</span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
                       <button
-                        onClick={() => setOpenActionMenu(openActionMenu === item.id ? null : item.id)}
+                        ref={(el) => buttonRefs.current[item.id] = el}
+                        onClick={() => handleActionMenuToggle(item.id)}
                         className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
                       >
                         <svg className="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
@@ -282,29 +308,6 @@ const PackingInventory = () => {
                           <circle cx="12" cy="19" r="2" />
                         </svg>
                       </button>
-
-                      {openActionMenu === item.id && (
-                        <>
-                          <div
-                            className="fixed inset-0 z-10"
-                            onClick={() => setOpenActionMenu(null)}
-                          />
-                          <div className="absolute right-0 mt-2 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
-                            <button
-                              onClick={() => handleEdit(item)}
-                              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDelete(item.id, item.name)}
-                              className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-50 transition-colors"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </>
-                      )}
                     </td>
                   </tr>
                 ))}
@@ -339,11 +342,10 @@ const PackingInventory = () => {
                     <button
                       key={pageNumber}
                       onClick={() => setCurrentPage(pageNumber)}
-                      className={`min-w-[40px] px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        currentPage === pageNumber
-                          ? 'bg-emerald-500 text-white'
-                          : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
-                      }`}
+                      className={`min-w-[40px] px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentPage === pageNumber
+                        ? 'bg-emerald-500 text-white'
+                        : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+                        }`}
                     >
                       {pageNumber}
                     </button>
@@ -374,6 +376,36 @@ const PackingInventory = () => {
           </div>
         </div>
       </div>
+
+      {/* Action Menu Dropdown */}
+      {openActionMenu && (
+        <>
+          <div
+            className="fixed inset-0 z-10"
+            onClick={() => setOpenActionMenu(null)}
+          />
+          <div 
+            className="fixed w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20"
+            style={{ top: `${menuPosition.top}px`, left: `${menuPosition.left}px` }}
+          >
+            <button
+              onClick={() => handleEdit(filteredItems.find(item => item.id === openActionMenu))}
+              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Edit
+            </button>
+            <button
+              onClick={() => {
+                const item = filteredItems.find(item => item.id === openActionMenu);
+                handleDelete(item.id, item.name);
+              }}
+              className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-50 transition-colors"
+            >
+              Delete
+            </button>
+          </div>
+        </>
+      )}
 
       {/* Delete Confirmation Modal */}
       <ConfirmDeleteModal

@@ -44,6 +44,7 @@ const Navbar = ({ onMenuClick }) => {
     if(path ==='/orders/create') return 'Order Create'
     if (path === '/order-assign') return 'Order Assign';
     if (path.match(/^\/preorders\/[^/]+$/)) return 'PreOrder';
+    if (path.match(/^\/order-assign\/local\/[^/]+$/)) return 'Local Order Assign';
     if (path.match(/^\/order-assign\/stage1\/[^/]+$/)) return 'Order Assign - Stage 1';
     if (path.match(/^\/order-assign\/stage2\/[^/]+$/)) return 'Order Assign - Stage 2';
     if (path === '/payouts') return 'Payout Management';

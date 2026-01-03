@@ -27,8 +27,34 @@ const VendorDashboard = () => {
           getAllVendors(1, 100),
           getAllProducts(1, 100)
         ]);
-        setVendors(vendorsResponse.data || []);
-        setAllProducts(productsResponse.data || []);
+        
+        const products = productsResponse.data || [];
+        const productMap = {};
+        products.forEach(p => {
+          productMap[p.pid] = p.product_name;
+        });
+        
+        const vendorsData = (vendorsResponse.data || []).map(vendor => {
+          let productList = [];
+          if (typeof vendor.product_list === 'string') {
+            try {
+              const parsed = JSON.parse(vendor.product_list);
+              if (Array.isArray(parsed)) {
+                productList = parsed.map(item => 
+                  typeof item === 'object' && item.pid 
+                    ? { product_id: item.pid, product_name: item.product_name }
+                    : { product_id: item, product_name: productMap[item] || `Product ${item}` }
+                );
+              }
+            } catch (e) {
+              productList = [];
+            }
+          }
+          return { ...vendor, product_list: productList };
+        });
+        
+        setVendors(vendorsData);
+        setAllProducts(products);
       } catch (err) {
         console.error('Error fetching data:', err);
         setError('Failed to load data');
@@ -92,8 +118,6 @@ const VendorDashboard = () => {
 
   // Transform vendor data for display
   const transformVendorData = (vendor) => {
-    console.log('Transforming vendor:', vendor); // Debug log
-    // Determine vendor type and ID
     let vendorType = vendor.vendor_type || 'Unknown';
     let vendorId = '';
     let vendorName = '';
@@ -102,24 +126,13 @@ const VendorDashboard = () => {
     let location = '';
     let products = [];
     
-    // Parse product_list JSON string and convert IDs to product names
-    let productIds = [];
-    if (vendor.product_list) {
-      try {
-        const parsed = JSON.parse(vendor.product_list);
-        productIds = Array.isArray(parsed) ? parsed : [];
-      } catch (e) {
-        productIds = [];
-      }
-    }
-    
-    products = productIds.map(id => {
-      const product = allProducts.find(p => p.pid === id);
-      return {
-        name: product ? product.product_name : `Product ${id}`,
+    // Use already parsed product_list from useEffect
+    if (Array.isArray(vendor.product_list) && vendor.product_list.length > 0) {
+      products = vendor.product_list.map(product => ({
+        name: product.product_name,
         color: 'bg-[#D4F4E8] text-[#047857]'
-      };
-    });
+      }));
+    }
     
     if (vendor.vendor_type === 'farmer') {
       vendorType = 'Farmer';
@@ -153,7 +166,6 @@ const VendorDashboard = () => {
       email,
       location,
       products,
-      performance: vendor.performance || 'N/A',
       status: vendor.status || 'Active'
     };
   };
@@ -264,7 +276,6 @@ const VendorDashboard = () => {
                 <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Product List</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Contact</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Location</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Performance</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Status</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Action</th>
               </tr>
@@ -337,16 +348,6 @@ const VendorDashboard = () => {
 
                   <td className="px-6 py-4">
                     <div className="text-sm text-[#0D5C4D]">{vendor.location}</div>
-                  </td>
-
-                  <td className="px-6 py-4">
-                    <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${vendor.performance === 'Excellent' ? 'bg-[#4ED39A] text-white' :
-                        vendor.performance === 'Good' ? 'bg-[#4ED39A] text-white' :
-                          vendor.performance === 'Average' ? 'bg-amber-500 text-white' :
-                            'bg-gray-500 text-white'
-                      }`}>
-                      {vendor.performance}
-                    </span>
                   </td>
 
                   <td className="px-6 py-4">

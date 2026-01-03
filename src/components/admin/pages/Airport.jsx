@@ -97,7 +97,17 @@ const Airport = () => {
                 : 'bg-[#D4F4E8] text-[#0D5C4D] hover:bg-[#B8F4D8]'
             }`}
           >
-            Packing Inventory
+            Invoice Stock Management
+          </button>
+          <button 
+            onClick={() => navigate('/settings/inventory-company')}
+            className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-colors ${
+              location.pathname === '/settings/inventory-company' 
+                ? 'bg-[#0D7C66] text-white' 
+                : 'bg-[#D4F4E8] text-[#0D5C4D] hover:bg-[#B8F4D8]'
+            }`}
+          >
+            Inventory Company
           </button>
           <button 
             onClick={() => navigate('/settings/airport')}

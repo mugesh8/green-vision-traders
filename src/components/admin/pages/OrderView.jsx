@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, FileDown } from 'lucide-react';
 import { getOrderById, getDraftById } from '../../../api/orderApi';
+import * as XLSX from 'xlsx';
 
 const OrderView = () => {
     const navigate = useNavigate();
-    const { id } = useParams();
+    const { id, orderId } = useParams(); // Get both id and orderId from params
+    const orderIdToUse = orderId || id; // Use orderId if available (from farmer route), otherwise use id
     const location = useLocation();
     const [order, setOrder] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -62,9 +64,9 @@ const OrderView = () => {
                 let response;
 
                 if (isDraftView) {
-                    response = await getDraftById(id);
+                    response = await getDraftById(orderIdToUse);
                 } else {
-                    response = await getOrderById(id);
+                    response = await getOrderById(orderIdToUse);
                 }
 
                 if (response.success) {
@@ -79,10 +81,10 @@ const OrderView = () => {
             }
         };
 
-        if (id) {
+        if (orderIdToUse) {
             fetchOrderOrDraft();
         }
-    }, [id, location.pathname]);
+    }, [orderIdToUse, location.pathname]);
 
     // Show loading state
     if (loading) {
@@ -166,6 +168,132 @@ const OrderView = () => {
 
     const totals = calculateTotals();
 
+    // Export to Excel function
+    const handleExportToExcel = () => {
+        if (!formattedData || !formattedData.items || formattedData.items.length === 0) {
+            alert('No data to export');
+            return;
+        }
+
+        // Prepare order summary data
+        const orderSummary = [
+            { Field: 'Order ID', Value: isDraft ? formattedData.id : formattedData.oid },
+            { Field: 'Customer Name', Value: formattedData.customer_name },
+            { Field: 'Customer ID', Value: formattedData.customer_id },
+            { Field: 'Phone Number', Value: formattedData.phone_number || 'N/A' },
+            { Field: 'Order Status', Value: formattedData.order_status },
+            {
+                Field: 'Created Date', Value: formattedData.createdAt
+                    ? new Date(formattedData.createdAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: '2-digit'
+                    })
+                    : 'N/A'
+            },
+            { Field: 'Delivery Address', Value: formattedData.delivery_address },
+            { Field: '', Value: '' }, // Empty row for spacing
+        ];
+
+        // Prepare products data
+        const productsData = formattedData.items.map((item, index) => {
+            // Get product name - handle both 'product' and 'product_name' fields
+            const productName = item.product_name || item.product || 'N/A';
+
+            return {
+                'PRODUCT': productName,
+                'NO OF BOXES/BAGS': item.num_boxes || 0,
+                'TYPE OF PACKING': item.packing_type || 'N/A',
+                'BOX WEIGHT (KG)': parseFloat(item.box_weight || 0).toFixed(2),
+                'NET WEIGHT (KG)': parseFloat(item.net_weight || 0).toFixed(2),
+                'GROSS WEIGHT (KG)': parseFloat(item.gross_weight || 0).toFixed(2),
+                'MARKET PRICE (₹)': parseFloat(item.market_price || 0).toFixed(2),
+                'TOTAL AMOUNT (₹)': parseFloat(item.total_price || 0).toFixed(2)
+            };
+        });
+
+        // Add totals row
+        productsData.push({
+            'PRODUCT': 'Total',
+            'NO OF BOXES/BAGS': '',
+            'TYPE OF PACKING': '',
+            'BOX WEIGHT (KG)': '',
+            'NET WEIGHT (KG)': `${totals.totalNetWeight.toFixed(2)} kg`,
+            'GROSS WEIGHT (KG)': `${totals.totalGrossWeight.toFixed(2)} kg`,
+            'MARKET PRICE (₹)': '',
+            'TOTAL AMOUNT (₹)': `₹${totals.totalAmount.toFixed(2)}`
+        });
+
+        // Prepare packing summary data
+        const packingSummaryData = [];
+
+        // Add header row for Brown Tape Gross Weight
+        packingSummaryData.push({
+            'Description': 'Brown Tape Gross Weight',
+            'Value': `${packingSummary.totalGrossWeight} Kg`
+        });
+
+        // Add empty row for spacing
+        packingSummaryData.push({
+            'Description': '',
+            'Value': ''
+        });
+
+        // Add packing types
+        packingSummary.groups.forEach(g => {
+            packingSummaryData.push({
+                'Description': g.type,
+                'Value': g.count
+            });
+        });
+
+        // Add empty row for spacing
+        packingSummaryData.push({
+            'Description': '',
+            'Value': ''
+        });
+
+        // Add total
+        packingSummaryData.push({
+            'Description': 'Total No. of Pcs',
+            'Value': packingSummary.totalPcs
+        });
+
+        // Create workbook
+        const workbook = XLSX.utils.book_new();
+
+        // Add Order Summary sheet
+        const summarySheet = XLSX.utils.json_to_sheet(orderSummary);
+        summarySheet['!cols'] = [{ wch: 20 }, { wch: 50 }];
+        XLSX.utils.book_append_sheet(workbook, summarySheet, 'Order Summary');
+
+        // Add Products sheet
+        const productsSheet = XLSX.utils.json_to_sheet(productsData);
+        productsSheet['!cols'] = [
+            { wch: 25 }, // Product
+            { wch: 20 }, // No of Boxes/Bags
+            { wch: 20 }, // Type of Packing
+            { wch: 18 }, // Box Weight
+            { wch: 18 }, // Net Weight
+            { wch: 20 }, // Gross Weight
+            { wch: 18 }, // Market Price
+            { wch: 20 }  // Total Amount
+        ];
+        XLSX.utils.book_append_sheet(workbook, productsSheet, 'Products');
+
+        // Add Packing Summary sheet
+        const packingSheet = XLSX.utils.json_to_sheet(packingSummaryData);
+        packingSheet['!cols'] = [{ wch: 35 }, { wch: 20 }];
+        XLSX.utils.book_append_sheet(workbook, packingSheet, 'Packing Summary');
+
+        // Generate filename
+        const orderId = isDraft ? formattedData.id : formattedData.oid;
+        const fileName = `Order_${orderId}_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+        // Download file
+        XLSX.writeFile(workbook, fileName);
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
             <div className="max-w-7xl mx-auto">
@@ -174,7 +302,11 @@ const OrderView = () => {
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => {
-                                if (isDraft) {
+                                // Check if we're coming from a farmer route
+                                if (location.pathname.includes('/farmers/')) {
+                                    const farmerId = location.pathname.split('/')[2];
+                                    navigate(`/farmers/${farmerId}/orders`);
+                                } else if (isDraft) {
                                     navigate('/orders?tab=drafts');
                                 } else {
                                     navigate('/orders?tab=orders');
@@ -188,6 +320,13 @@ const OrderView = () => {
                         <h1 className="text-2xl font-bold text-gray-900">{isDraft ? 'Draft' : 'Order'} Details</h1>
                     </div>
                     <div className="flex gap-3">
+                        <button
+                            onClick={handleExportToExcel}
+                            className="px-6 py-2.5 bg-[#10B981] text-white rounded-lg hover:bg-[#059669] transition-colors duration-200 font-medium flex items-center gap-2"
+                        >
+                            <FileDown className="w-4 h-4" />
+                            Export to Excel
+                        </button>
                         {isDraft ? (
                             <button
                                 onClick={() => navigate(`/orders/create?draftId=${order.did}`)}
@@ -236,26 +375,18 @@ const OrderView = () => {
                                 {formattedData.order_status}
                             </span>
                         </div>
-                        {/* {!isDraft && (
-                            <>
-                                <div>
-                                    <p className="text-sm text-gray-500 mb-1">Priority</p>
-                                    <p className="font-semibold text-gray-900">{formattedData.priority}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-gray-500 mb-1">Created At</p>
-                                    <p className="font-semibold text-gray-900">
-                                        {new Date(formattedData.createdAt).toLocaleDateString()}
-                                    </p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-gray-500 mb-1">Updated At</p>
-                                    <p className="font-semibold text-gray-900">
-                                        {new Date(formattedData.updatedAt).toLocaleDateString()}
-                                    </p>
-                                </div>
-                            </>
-                        )} */}
+                        <div>
+                            <p className="text-sm text-gray-500 mb-1">Created Date</p>
+                            <p className="font-semibold text-gray-900">
+                                {formattedData.createdAt
+                                    ? new Date(formattedData.createdAt).toLocaleDateString('en-US', {
+                                        year: 'numeric',
+                                        month: 'short',
+                                        day: '2-digit'
+                                    })
+                                    : 'N/A'}
+                            </p>
+                        </div>
                     </div>
                 </div>
 

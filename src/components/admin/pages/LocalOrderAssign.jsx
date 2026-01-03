@@ -12,7 +12,7 @@ import { getAllProducts } from '../../../api/productApi';
 import { getAvailableStock } from '../../../api/orderAssignmentApi';
 import { getVegetableAvailabilityByFarmer } from '../../../api/vegetableAvailabilityApi';
 
-const OrderAssignCreateStage1 = () => {
+const LocalOrderAssign = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { id } = useParams();
@@ -602,8 +602,8 @@ const OrderAssignCreateStage1 = () => {
         }
         return false;
       });
-      alert('Stage 1 saved successfully!');
-      navigate(`/order-assign/stage2/${id}`, { state: { orderData: orderDetails } });
+      alert('Local order assignment saved successfully!');
+      navigate('/order-assign');
     } catch (error) {
       console.error('Error saving stage 1:', error);
       alert('Failed to save stage 1 assignment. Please try again.');
@@ -742,18 +742,7 @@ const OrderAssignCreateStage1 = () => {
         </div>
       </div>
 
-      {/* Stage Tabs */}
-      <div className="mb-6 flex flex-col sm:flex-row gap-3">
-        <button className="px-6 py-3 bg-emerald-600 text-white rounded-lg font-medium shadow-sm hover:bg-emerald-700 transition-colors">
-          Stage 1: Product Collection
-        </button>
-        <button
-          onClick={() => navigate(`/order-assign/stage2/${id}`, { state: { orderData: orderDetails } })}
-          className="px-6 py-3 bg-gray-100 text-gray-600 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-        >
-          Stage 2: Packaging to Airport
-        </button>
-      </div>
+
 
       {/* Stage 1 Section */}
       <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
@@ -772,6 +761,49 @@ const OrderAssignCreateStage1 = () => {
           </div>
         </div>
         <p className="text-sm text-gray-600 mb-6">Assign order products to farmers, suppliers, and third parties for collection and delivery to packaging location</p>
+
+        {/* Totals Summary */}
+        <div className="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Total Net Weight - Always visible */}
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
+            <p className="text-xs font-semibold text-gray-600 uppercase mb-1">Total Net Weight</p>
+            <p className="text-2xl font-bold text-blue-700">
+              {productRows.reduce((sum, p) => sum + (parseFloat(p.net_weight) || 0), 0).toFixed(2)} kg
+            </p>
+          </div>
+          
+          {/* Total No. of Boxes - Always visible for local orders */}
+          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
+            <p className="text-xs font-semibold text-gray-600 uppercase mb-1">Total No. of Boxes</p>
+            <p className="text-2xl font-bold text-green-700">
+              {productRows.reduce((sum, p) => {
+                const numBoxes = p.num_boxes;
+                if (typeof numBoxes === 'string') {
+                  const match = numBoxes.match(/^(\d+(?:\.\d+)?)/);
+                  return sum + (match ? parseFloat(match[1]) : 0);
+                }
+                return sum + (parseFloat(numBoxes) || 0);
+              }, 0).toFixed(2)}
+            </p>
+          </div>
+          
+          {/* Total Gross Weight - Always visible for local orders */}
+          <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
+            <p className="text-xs font-semibold text-gray-600 uppercase mb-1">Total Gross Weight</p>
+            <p className="text-2xl font-bold text-purple-700">
+              {(() => {
+                const totalNet = productRows.reduce((sum, p) => sum + (parseFloat(p.net_weight) || 0), 0);
+                const totalBoxWeight = productRows.reduce((sum, p) => {
+                  const numBoxes = typeof p.num_boxes === 'string' 
+                    ? (p.num_boxes.match(/^(\d+(?:\.\d+)?)/)?.[1] || 0)
+                    : (p.num_boxes || 0);
+                  return sum + (parseFloat(numBoxes) * 0.5); // Assuming avg box weight 0.5kg
+                }, 0);
+                return (totalNet + totalBoxWeight).toFixed(2);
+              })()} kg
+            </p>
+          </div>
+        </div>
 
         {/* Product Table - Desktop */}
         <div className="hidden lg:block overflow-x-auto">
@@ -1570,11 +1602,11 @@ const OrderAssignCreateStage1 = () => {
           Cancel
         </button>
         <button onClick={handleSaveStage1} className="px-6 py-3 bg-emerald-600 text-white rounded-lg font-medium shadow-sm hover:bg-emerald-700 transition-colors">
-          Save Stage 1
+          Save Assignment
         </button>
       </div>
     </div>
   );
 };
 
-export default OrderAssignCreateStage1;
+export default LocalOrderAssign;

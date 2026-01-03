@@ -46,29 +46,22 @@ const Farmers = () => {
         });
         
         const farmersData = (farmersResponse.data || []).map(farmer => {
-          let productIds = [];
+          let productList = [];
           if (typeof farmer.product_list === 'string') {
             try {
-              productIds = JSON.parse(farmer.product_list);
+              const parsed = JSON.parse(farmer.product_list);
+              if (Array.isArray(parsed)) {
+                productList = parsed.map(item => 
+                  typeof item === 'object' && item.pid 
+                    ? { product_id: item.pid, product_name: item.product_name }
+                    : { product_id: item, product_name: productMap[item] || `Product ${item}` }
+                );
+              }
             } catch (e) {
-              productIds = [];
+              productList = [];
             }
-          } else if (Array.isArray(farmer.product_list)) {
-            productIds = farmer.product_list;
           }
-          
-          // Ensure productIds is always an array
-          if (!Array.isArray(productIds)) {
-            productIds = [];
-          }
-          
-          return {
-            ...farmer,
-            product_list: productIds.map(id => ({
-              product_id: id,
-              product_name: productMap[id] || `Product ${id}`
-            }))
-          };
+          return { ...farmer, product_list: productList };
         });
         
         setAllFarmers(farmersData);
@@ -212,20 +205,19 @@ const Farmers = () => {
                 <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Contact</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Location</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Status</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Dues</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-[#0D5C4D]">Action</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-8 text-center text-[#6B8782]">
+                  <td colSpan="6" className="px-6 py-8 text-center text-[#6B8782]">
                     Loading farmers...
                   </td>
                 </tr>
               ) : farmers.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-8 text-center text-[#6B8782]">
+                  <td colSpan="6" className="px-6 py-8 text-center text-[#6B8782]">
                     No farmers found
                   </td>
                 </tr>
@@ -296,12 +288,6 @@ const Farmers = () => {
                       <div className="w-2 h-2 rounded-full bg-white"></div>
                       {farmer.status === 'active' ? 'Active' : 'Inactive'}
                     </span>
-                  </td>
-
-                  <td className="px-6 py-4">
-                    <div className="text-sm font-semibold text-[#047857]">
-                      ₹0
-                    </div>
                   </td>
 
                   <td className="px-6 py-4">

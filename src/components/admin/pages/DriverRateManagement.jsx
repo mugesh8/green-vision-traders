@@ -66,7 +66,8 @@ const DriverRateManagement = () => {
       {/* Tabs */}
       <div className="px-6 sm:px-8 py-4">
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => navigate('/settings')} className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-colors ${location.pathname === '/settings' ? 'bg-[#0D7C66] text-white' : 'bg-[#D4F4E8] text-[#0D5C4D] hover:bg-[#B8F4D8]'}`}>Packing Inventory</button>
+          <button onClick={() => navigate('/settings')} className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-colors ${location.pathname === '/settings' ? 'bg-[#0D7C66] text-white' : 'bg-[#D4F4E8] text-[#0D5C4D] hover:bg-[#B8F4D8]'}`}>Invoice Stock Management</button>
+          <button onClick={() => navigate('/settings/inventory-company')} className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-colors ${location.pathname === '/settings/inventory-company' ? 'bg-[#0D7C66] text-white' : 'bg-[#D4F4E8] text-[#0D5C4D] hover:bg-[#B8F4D8]'}`}>Inventory Company</button>
           <button onClick={() => navigate('/settings/airport')} className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-colors ${location.pathname === '/settings/airport' ? 'bg-[#0D7C66] text-white' : 'bg-[#D4F4E8] text-[#0D5C4D] hover:bg-[#B8F4D8]'}`}>Airport Locations</button>
           <button onClick={() => navigate('/settings/petroleum')} className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-colors ${location.pathname === '/settings/petroleum' ? 'bg-[#0D7C66] text-white' : 'bg-[#D4F4E8] text-[#0D5C4D] hover:bg-[#B8F4D8]'}`}>Petroleum Management</button>
           <button onClick={() => navigate('/settings/labour-rate')} className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-colors ${location.pathname === '/settings/labour-rate' ? 'bg-[#0D7C66] text-white' : 'bg-[#D4F4E8] text-[#0D5C4D] hover:bg-[#B8F4D8]'}`}>Labour Rate</button>

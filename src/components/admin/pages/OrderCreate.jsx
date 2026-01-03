@@ -11,9 +11,12 @@ const NewOrder = () => {
   const [formData, setFormData] = useState({
     customerName: '',
     customerId: '',
-    phoneNumber: '',
     order_id: '',
-    deliveryAddress: ''
+    orderReceivedDate: '',
+    packingDate: '',
+    packingDay: '',
+    orderType: 'local', // 'flight' or 'local'
+    detailsComment: ''
   });
 
   const [products, setProducts] = useState([
@@ -27,8 +30,7 @@ const NewOrder = () => {
       grossWeight: '',
       boxWeight: '',
       boxCapacity: '',
-      marketPrice: '',
-      totalAmount: '',
+      showMoreDetails: false
     },
   ]);
 
@@ -46,6 +48,16 @@ const NewOrder = () => {
   const inputRefs = useRef({});
   const [draftId, setDraftId] = useState(null);
   const [orderId, setOrderId] = useState(null);
+
+  const toggleMoreDetails = (id) => {
+    setProducts(prev => 
+      prev.map(product => 
+        product.id === id 
+          ? { ...product, showMoreDetails: !product.showMoreDetails }
+          : product
+      )
+    );
+  };
 
   // Helper function to format number of boxes/bags for API
   const formatNumBoxesForAPI = (value, packingType) => {
@@ -87,9 +99,12 @@ const NewOrder = () => {
             setFormData({
               customerName: draft.customer_name || '',
               customerId: draft.customer_id || '',
-              phoneNumber: draft.phone_number || '',
               order_id: '',
-              deliveryAddress: draft.delivery_address || ''
+              orderReceivedDate: draft.order_received_date || '',
+              packingDate: draft.packing_date || '',
+              packingDay: draft.packing_day || '',
+              orderType: draft.order_type || 'local',
+              detailsComment: draft.details_comment || ''
             });
 
             const draftProducts = draft.draft_data?.products || [];
@@ -103,8 +118,7 @@ const NewOrder = () => {
               grossWeight: product.grossWeight || '',
               boxWeight: product.boxWeight || '',
               boxCapacity: '',
-              marketPrice: product.marketPrice || '',
-              totalAmount: product.totalAmount || '',
+              showMoreDetails: false
             }));
 
             setProducts(formattedProducts.length > 0 ? formattedProducts : [{
@@ -117,8 +131,7 @@ const NewOrder = () => {
               grossWeight: '',
               boxWeight: '',
               boxCapacity: '',
-              marketPrice: '',
-              totalAmount: '',
+              showMoreDetails: false
             }]);
           }
         } catch (error) {
@@ -137,9 +150,12 @@ const NewOrder = () => {
             setFormData({
               customerName: order.customer_name || '',
               customerId: order.customer_id || '',
-              phoneNumber: order.phone_number || '',
               order_id: order.oid || '',
-              deliveryAddress: order.delivery_address || ''
+              orderReceivedDate: order.order_received_date || '',
+              packingDate: order.packing_date || '',
+              packingDay: order.packing_day || '',
+              orderType: order.order_type || 'local',
+              detailsComment: order.details_comment || ''
             });
 
             const orderItems = order.items || [];
@@ -161,8 +177,7 @@ const NewOrder = () => {
                 grossWeight: item.gross_weight || '',
                 boxWeight: item.box_weight || '',
                 boxCapacity: '',
-                marketPrice: item.market_price || '',
-                totalAmount: item.total_price || '',
+                showMoreDetails: false
               };
             });
 
@@ -176,8 +191,7 @@ const NewOrder = () => {
               grossWeight: '',
               boxWeight: '',
               boxCapacity: '',
-              marketPrice: '',
-              totalAmount: '',
+              showMoreDetails: false
             }]);
           }
         } catch (error) {
@@ -195,6 +209,30 @@ const NewOrder = () => {
         const response = await getAllProducts(1, 1000);
         const activeProducts = (response.data || []).filter(p => p.product_status === 'active');
         setAllProducts(activeProducts);
+        
+        // Pre-populate products with default_status true only if not loading draft/order
+        const urlParams = new URLSearchParams(window.location.search);
+        const draftIdFromUrl = urlParams.get('draftId');
+        const orderIdFromUrl = urlParams.get('orderId');
+        
+        if (!draftIdFromUrl && !orderIdFromUrl) {
+          const defaultProducts = activeProducts.filter(p => p.default_status === true);
+          if (defaultProducts.length > 0) {
+            const formattedProducts = defaultProducts.map((product, index) => ({
+              id: index + 1,
+              productId: product.pid.toString(),
+              productName: `${product.pid} - ${product.product_name}`,
+              numBoxes: '',
+              packingType: '',
+              netWeight: '',
+              grossWeight: '',
+              boxWeight: '',
+              boxCapacity: '',
+              showMoreDetails: false
+            }));
+            setProducts(formattedProducts);
+          }
+        }
       } catch (error) {
         console.error('Error fetching products:', error);
       }
@@ -267,15 +305,13 @@ const NewOrder = () => {
         if (product.id === id) {
           const updatedProduct = { ...product, [field]: value };
 
-          // When product ID changes, populate product name and market price
+          // When product ID changes, populate product name
           if (field === 'productId') {
             const selectedProduct = allProducts.find(p => p.pid === parseInt(value));
             if (selectedProduct) {
               updatedProduct.productName = `${selectedProduct.pid} - ${selectedProduct.product_name}`;
-              updatedProduct.marketPrice = selectedProduct.current_price || 0;
             } else {
               updatedProduct.productName = '';
-              updatedProduct.marketPrice = '';
             }
           }
 
@@ -289,7 +325,6 @@ const NewOrder = () => {
             if (matchingProduct) {
               updatedProduct.productId = matchingProduct.pid.toString();
               updatedProduct.productName = `${matchingProduct.pid} - ${matchingProduct.product_name}`;
-              updatedProduct.marketPrice = matchingProduct.current_price || 0;
             }
 
             if (value.length > 0) {
@@ -330,11 +365,25 @@ const NewOrder = () => {
                 const calculatedNetWeight = numBoxes * boxCapacity;
                 updatedProduct.netWeight = calculatedNetWeight.toFixed(2);
                 updatedProduct.grossWeight = (calculatedNetWeight + (numBoxes * actualBoxWeight)).toFixed(2);
-
-                // Calculate total amount
-                const marketPrice = parseFloat(updatedProduct.marketPrice) || 0;
-                updatedProduct.totalAmount = (calculatedNetWeight * marketPrice).toFixed(2);
               }
+            }
+
+            // For Local Grade orders, when "Others" is selected, show all products
+            if (formData.orderType === 'local' && value === 'Others') {
+              const inputEl = inputRefs.current[id];
+              if (inputEl) {
+                const rect = inputEl.getBoundingClientRect();
+                setSuggestionPosition(prev => ({
+                  ...prev,
+                  [id]: {
+                    top: rect.bottom + window.scrollY,
+                    left: rect.left + window.scrollX,
+                    width: rect.width
+                  }
+                }));
+              }
+              setShowProductSuggestions(prev => ({ ...prev, [id]: true }));
+              setProductSuggestionValue(prev => ({ ...prev, [id]: '' }));
             }
           }
 
@@ -343,15 +392,12 @@ const NewOrder = () => {
             const netWeight = parseFloat(updatedProduct.netWeight) || 0;
             const boxWeight = parseFloat(updatedProduct.boxWeight) || 0;
             const boxCapacity = parseFloat(updatedProduct.boxCapacity) || 0;
-            const marketPrice = parseFloat(updatedProduct.marketPrice) || 0;
 
             if (boxCapacity > 0 && netWeight > 0) {
               const numBoxes = netWeight / boxCapacity;
               updatedProduct.numBoxes = numBoxes.toFixed(2);
               updatedProduct.grossWeight = (netWeight + (numBoxes * boxWeight)).toFixed(2);
             }
-
-            updatedProduct.totalAmount = (netWeight * marketPrice).toFixed(2);
           }
 
           // When number of boxes changes, recalculate net weight based on box capacity
@@ -360,16 +406,12 @@ const NewOrder = () => {
             const numBoxes = parseFloat(value) || 0;
             const boxWeight = parseFloat(updatedProduct.boxWeight) || 0;
             const boxCapacity = parseFloat(updatedProduct.boxCapacity) || 0;
-            const marketPrice = parseFloat(updatedProduct.marketPrice) || 0;
 
             // Calculate net weight from number of boxes and box capacity
             if (numBoxes > 0 && boxCapacity > 0) {
               const calculatedNetWeight = numBoxes * boxCapacity;
               updatedProduct.netWeight = calculatedNetWeight.toFixed(2);
               updatedProduct.grossWeight = (calculatedNetWeight + (numBoxes * boxWeight)).toFixed(2);
-
-              // Calculate total amount
-              updatedProduct.totalAmount = (calculatedNetWeight * marketPrice).toFixed(2);
             } else if (numBoxes > 0 && boxWeight > 0) {
               // If no box capacity, just update gross weight
               const netWeight = parseFloat(updatedProduct.netWeight) || 0;
@@ -389,18 +431,9 @@ const NewOrder = () => {
             // Net Weight = Gross Weight - Total Box Weight
             const netWeight = (grossWeight - totalBoxWeight);
             updatedProduct.netWeight = netWeight.toFixed(2);
-
-            // Recalculate total amount
-            const marketPrice = parseFloat(updatedProduct.marketPrice) || 0;
-            updatedProduct.totalAmount = (netWeight * marketPrice).toFixed(2);
           }
 
-          // When market price changes, recalculate total amount
-          if (field === 'marketPrice') {
-            const netWeight = parseFloat(updatedProduct.netWeight) || 0;
-            const marketPrice = parseFloat(updatedProduct.marketPrice) || 0;
-            updatedProduct.totalAmount = (netWeight * marketPrice).toFixed(2);
-          }
+
 
           return updatedProduct;
         }
@@ -418,16 +451,10 @@ const NewOrder = () => {
     setProducts(prev =>
       prev.map(p => {
         if (p.id === id) {
-          const netWeight = parseFloat(p.netWeight) || 0;
-          const marketPrice = product.current_price || 0;
-          const totalAmount = (netWeight * marketPrice).toFixed(2);
-
           return {
             ...p,
             productId: product.pid.toString(),
-            productName: `${product.pid} - ${product.product_name}`,
-            marketPrice: marketPrice.toString(),
-            totalAmount: totalAmount
+            productName: `${product.pid} - ${product.product_name}`
           };
         }
         return p;
@@ -447,8 +474,7 @@ const NewOrder = () => {
       grossWeight: '',
       boxWeight: '',
       boxCapacity: '',
-      marketPrice: '',
-      totalAmount: '',
+      showMoreDetails: false
     };
     setProducts([...products, newProduct]);
   };
@@ -466,21 +492,11 @@ const NewOrder = () => {
       newErrors.customerName = 'Customer name is required';
     }
 
-    if (!formData.phoneNumber.trim()) {
-      newErrors.phoneNumber = 'Phone number is required';
-    }
-
-    if (!formData.deliveryAddress.trim()) {
-      newErrors.deliveryAddress = 'Delivery address is required';
-    }
-
     const invalidProducts = products.filter(product => {
       return (
         !product.productId ||
         !product.productName ||
-        !product.packingType ||
-        product.netWeight === '' || product.netWeight === null || product.netWeight === undefined ||
-        product.marketPrice === '' || product.marketPrice === null || product.marketPrice === undefined
+        product.netWeight === '' || product.netWeight === null || product.netWeight === undefined
       );
     });
 
@@ -497,8 +513,11 @@ const NewOrder = () => {
       const draftData = {
         customerName: formData.customerName,
         customerId: formData.customerId || undefined,
-        phoneNumber: formData.phoneNumber || undefined,
-        deliveryAddress: formData.deliveryAddress,
+        orderReceivedDate: formData.orderReceivedDate || undefined,
+        packingDate: formData.packingDate || undefined,
+        packingDay: formData.packingDay || undefined,
+        orderType: formData.orderType || 'local',
+        detailsComment: formData.detailsComment || undefined,
         products: products.map(product => {
           let numBoxesValue = product.numBoxes;
 
@@ -512,13 +531,11 @@ const NewOrder = () => {
           return {
             productId: parseInt(product.productId),
             productName: product.productName,
-            numBoxes: formatNumBoxesForAPI(numBoxesNumeric, product.packingType),
-            packingType: product.packingType,
             netWeight: product.netWeight.toString(),
-            grossWeight: product.grossWeight.toString(),
-            boxWeight: product.boxWeight.toString(),
-            marketPrice: parseFloat(product.marketPrice),
-            totalAmount: parseFloat(product.totalAmount) || 0
+            numBoxes: product.numBoxes ? formatNumBoxesForAPI(numBoxesNumeric, product.packingType) : undefined,
+            packingType: product.packingType || undefined,
+            grossWeight: product.grossWeight ? product.grossWeight.toString() : undefined,
+            boxWeight: product.boxWeight ? product.boxWeight.toString() : undefined
           };
         })
       };
@@ -562,8 +579,11 @@ const NewOrder = () => {
       const orderData = {
         customerName: formData.customerName,
         customerId: formData.customerId || undefined,
-        phoneNumber: formData.phoneNumber || undefined,
-        deliveryAddress: formData.deliveryAddress,
+        orderReceivedDate: formData.orderReceivedDate || undefined,
+        packingDate: formData.packingDate || undefined,
+        packingDay: formData.packingDay || undefined,
+        orderType: formData.orderType || 'local',
+        detailsComment: formData.detailsComment || undefined,
         products: products.map(product => {
           let numBoxesValue = product.numBoxes;
 
@@ -576,12 +596,11 @@ const NewOrder = () => {
 
           return {
             productId: parseInt(product.productId),
-            numBoxes: formatNumBoxesForAPI(numBoxesNumeric, product.packingType),
-            packingType: product.packingType,
             netWeight: product.netWeight.toString(),
-            grossWeight: product.grossWeight.toString(),
-            boxWeight: product.boxWeight.toString(),
-            marketPrice: parseFloat(product.marketPrice)
+            numBoxes: product.numBoxes ? formatNumBoxesForAPI(numBoxesNumeric, product.packingType) : undefined,
+            packingType: product.packingType || undefined,
+            grossWeight: product.grossWeight ? product.grossWeight.toString() : undefined,
+            boxWeight: product.boxWeight ? product.boxWeight.toString() : undefined
           };
         })
       };
@@ -605,9 +624,12 @@ const NewOrder = () => {
         setFormData({
           customerName: "",
           customerId: "",
-          phoneNumber: "",
           order_id: "",
-          deliveryAddress: ""
+          orderReceivedDate: "",
+          packingDate: "",
+          packingDay: "",
+          orderType: "local",
+          detailsComment: ""
         });
 
         setProducts([
@@ -621,8 +643,7 @@ const NewOrder = () => {
             grossWeight: "",
             boxWeight: "",
             boxCapacity: "",
-            marketPrice: "",
-            totalAmount: "",
+            showMoreDetails: false
           },
         ]);
 
@@ -692,47 +713,100 @@ const NewOrder = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone Number <span className="text-red-500">*</span>
+                  Order Received Date
                 </label>
                 <input
-                  type="tel"
-                  name="phoneNumber"
-                  value={formData.phoneNumber}
+                  type="date"
+                  name="orderReceivedDate"
+                  value={formData.orderReceivedDate}
                   onChange={handleInputChange}
-                  placeholder="+91 XXXXX XXXXX"
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D7C66] focus:border-transparent ${errors.phoneNumber ? 'border-red-500' : 'border-gray-300'}`}
-                  required
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D7C66] focus:border-transparent"
                 />
-                {errors.phoneNumber && (
-                  <p className="mt-1 text-sm text-red-500">{errors.phoneNumber}</p>
-                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Packing Date
+                </label>
+                <input
+                  type="date"
+                  name="packingDate"
+                  value={formData.packingDate}
+                  onChange={(e) => {
+                    handleInputChange(e);
+                    // Auto-calculate day of week
+                    if (e.target.value) {
+                      const date = new Date(e.target.value);
+                      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                      const dayName = days[date.getDay()];
+                      setFormData(prev => ({ ...prev, packingDay: dayName }));
+                    }
+                  }}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D7C66] focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Day
+                </label>
+                <input
+                  type="text"
+                  name="packingDay"
+                  value={formData.packingDay}
+                  readOnly
+                  placeholder="Auto-filled from packing date"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 cursor-not-allowed"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Order Type
+                </label>
+                <div className="flex gap-6">
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="radio"
+                      name="orderType"
+                      value="flight"
+                      checked={formData.orderType === 'flight'}
+                      onChange={handleInputChange}
+                      className="w-4 h-4 text-[#0D7C66] border-gray-300 focus:ring-[#0D7C66]"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Flight Order</span>
+                  </label>
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="radio"
+                      name="orderType"
+                      value="local"
+                      checked={formData.orderType === 'local'}
+                      onChange={handleInputChange}
+                      className="w-4 h-4 text-[#0D7C66] border-gray-300 focus:ring-[#0D7C66]"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Local Grade</span>
+                  </label>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Delivery Details */}
+          {/* Details/Comment */}
           <div className="bg-white rounded-xl shadow-sm p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-6">
-              Delivery Details
+              Details/Comment
             </h2>
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Delivery Address <span className="text-red-500">*</span>
+                  Additional Details or Comments
                 </label>
                 <textarea
-                  name="deliveryAddress"
-                  value={formData.deliveryAddress}
+                  name="detailsComment"
+                  value={formData.detailsComment}
                   onChange={handleInputChange}
-                  placeholder="Enter complete delivery address with landmark"
+                  placeholder="Enter any additional details or comments (optional)"
                   rows="3"
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D7C66] focus:border-transparent resize-none ${errors.deliveryAddress ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  required
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D7C66] focus:border-transparent resize-none"
                 />
-                {errors.deliveryAddress && (
-                  <p className="mt-1 text-sm text-red-500">{errors.deliveryAddress}</p>
-                )}
               </div>
             </div>
           </div>
@@ -745,6 +819,37 @@ const NewOrder = () => {
             {errors.products && (
               <p className="mt-2 text-sm text-red-500">{errors.products}</p>
             )}
+            
+            {/* Totals Summary */}
+            <div className="mt-4 mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Total Net Weight - Always visible */}
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
+                <p className="text-xs font-semibold text-gray-600 uppercase mb-1">Total Net Weight</p>
+                <p className="text-2xl font-bold text-blue-700">
+                  {products.reduce((sum, p) => sum + (parseFloat(p.netWeight) || 0), 0).toFixed(2)} kg
+                </p>
+              </div>
+              
+              {/* Total No. of Boxes - Show for flight orders OR local grade with more details */}
+              {(formData.orderType === 'flight' || products.some(p => p.showMoreDetails)) && (
+                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
+                  <p className="text-xs font-semibold text-gray-600 uppercase mb-1">Total No. of Boxes</p>
+                  <p className="text-2xl font-bold text-green-700">
+                    {products.reduce((sum, p) => sum + (parseFloat(p.numBoxes) || 0), 0).toFixed(2)}
+                  </p>
+                </div>
+              )}
+              
+              {/* Total Gross Weight - Show for flight orders OR local grade with more details */}
+              {(formData.orderType === 'flight' || products.some(p => p.showMoreDetails)) && (
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
+                  <p className="text-xs font-semibold text-gray-600 uppercase mb-1">Total Gross Weight</p>
+                  <p className="text-2xl font-bold text-purple-700">
+                    {products.reduce((sum, p) => sum + (parseFloat(p.grossWeight) || 0), 0).toFixed(2)} kg
+                  </p>
+                </div>
+              )}
+            </div>
             <div className="overflow-x-auto overflow-y-visible">
               <table className="w-full min-w-[1000px]">
                 <thead>
@@ -752,27 +857,27 @@ const NewOrder = () => {
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Product
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Type of Packing
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Box Weight (kg)
-                    </th>
+                    {formData.orderType !== 'local' && (
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Type of Packing
+                      </th>
+                    )}
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Net Weight (kg)
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      No of Boxes/Bags
+                      {formData.orderType === 'local' ? 'More Details' : 'Box Weight (kg)'}
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Gross Weight (kg)
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Market Price (₹)
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Total Amount (₹)
-                    </th>
+                    {formData.orderType !== 'local' && (
+                      <>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                          No of Boxes/Bags
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                          Gross Weight (kg)
+                        </th>
+                      </>
+                    )}
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Action
                     </th>
@@ -780,139 +885,204 @@ const NewOrder = () => {
                 </thead>
                 <tbody>
                   {products.map((product) => (
-                    <tr key={product.id} className="border-b border-gray-100">
-                      <td className="px-4 py-3">
-                        <input
-                          ref={(el) => (inputRefs.current[product.id] = el)}
-                          type="text"
-                          value={product.productName}
-                          onChange={(e) => handleProductChange(product.id, 'productName', e.target.value)}
-                          placeholder="Type product name"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D7C66] focus:border-transparent"
-                        />
-                        {showProductSuggestions[product.id] && allProducts.length > 0 && suggestionPosition[product.id] && createPortal(
-                          <div
-                            ref={productSuggestionsRef}
-                            style={{
-                              position: 'absolute',
-                              top: `${suggestionPosition[product.id].top}px`,
-                              left: `${suggestionPosition[product.id].left}px`,
-                              width: `${suggestionPosition[product.id].width}px`,
-                              minWidth: '250px',
-                              zIndex: 9999
-                            }}
-                            className="mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto"
-                          >
-                            {allProducts.map((prod) => (
-                              <button
-                                key={prod.pid}
-                                type="button"
-                                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 whitespace-nowrap"
-                                onClick={() => selectProductSuggestion(product.id, prod)}
-                              >
-                                {prod.pid} - {prod.product_name}
-                              </button>
-                            ))}
-                          </div>,
-                          document.body
+                    <React.Fragment key={product.id}>
+                      <tr className="border-b border-gray-100">
+                        <td className="px-4 py-3">
+                          <input
+                            ref={(el) => (inputRefs.current[product.id] = el)}
+                            type="text"
+                            value={product.productName}
+                            onChange={(e) => handleProductChange(product.id, 'productName', e.target.value)}
+                            placeholder="Type product name"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D7C66] focus:border-transparent"
+                          />
+                          {showProductSuggestions[product.id] && allProducts.length > 0 && suggestionPosition[product.id] && createPortal(
+                            <div
+                              ref={productSuggestionsRef}
+                              style={{
+                                position: 'absolute',
+                                top: `${suggestionPosition[product.id].top}px`,
+                                left: `${suggestionPosition[product.id].left}px`,
+                                width: `${suggestionPosition[product.id].width}px`,
+                                minWidth: '250px',
+                                zIndex: 9999
+                              }}
+                              className="mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto"
+                            >
+                              {allProducts.map((prod) => (
+                                <button
+                                  key={prod.pid}
+                                  type="button"
+                                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 whitespace-nowrap"
+                                  onClick={() => selectProductSuggestion(product.id, prod)}
+                                >
+                                  {prod.pid} - {prod.product_name}
+                                </button>
+                              ))}
+                            </div>,
+                            document.body
+                          )}
+                        </td>
+                        {formData.orderType !== 'local' && (
+                          <td className="px-4 py-3">
+                            <select
+                              value={product.packingType}
+                              onChange={(e) => handleProductChange(product.id, 'packingType', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D7C66] focus:border-transparent"
+                            >
+                              <option value="">Select packing</option>
+                              {packingOptions.map((item) => (
+                                <option key={item.id} value={item.name}>
+                                  {item.name}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
                         )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <select
-                          value={product.packingType}
-                          onChange={(e) => handleProductChange(product.id, 'packingType', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D7C66] focus:border-transparent"
-                        >
-                          <option value="">Select packing</option>
-                          {packingOptions.map((item) => (
-                            <option key={item.id} value={item.name}>
-                              {item.name}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-4 py-3">
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={product.boxWeight}
-                          onChange={(e) =>
-                            handleProductChange(product.id, 'boxWeight', e.target.value)
-                          }
-                          placeholder="0.00"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D7C66] focus:border-transparent"
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={product.netWeight}
-                          onChange={(e) =>
-                            handleProductChange(product.id, 'netWeight', e.target.value)
-                          }
-                          placeholder="0.00"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D7C66] focus:border-transparent"
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={product.numBoxes}
-                          onChange={(e) => handleProductChange(product.id, 'numBoxes', e.target.value)}
-                          placeholder="0"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D7C66] focus:border-transparent"
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={product.grossWeight}
-                          onChange={(e) =>
-                            handleProductChange(product.id, 'grossWeight', e.target.value)
-                          }
-                          placeholder="0.00"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D7C66] focus:border-transparent"
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={product.marketPrice}
-                          onChange={(e) =>
-                            handleProductChange(product.id, 'marketPrice', e.target.value)
-                          }
-                          placeholder="0.00"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D7C66] focus:border-transparent"
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={product.totalAmount}
-                          placeholder="0.00"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D7C66] focus:border-transparent bg-gray-50 cursor-not-allowed"
-                          readOnly
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        <button
-                          type="button"
-                          onClick={() => removeProduct(product.id)}
-                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors duration-150"
-                          disabled={products.length === 1}
-                        >
-                          <X className="w-5 h-5" />
-                        </button>
-                      </td>
-                    </tr>
+                        <td className="px-4 py-3">
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={product.netWeight}
+                            onChange={(e) =>
+                              handleProductChange(product.id, 'netWeight', e.target.value)
+                            }
+                            placeholder="0.00"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D7C66] focus:border-transparent"
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          {formData.orderType === 'local' ? (
+                            <button
+                              type="button"
+                              onClick={() => toggleMoreDetails(product.id)}
+                              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200 text-sm"
+                            >
+                              {product.showMoreDetails ? 'Hide Details' : 'Add More Details'}
+                            </button>
+                          ) : (
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={product.boxWeight}
+                              onChange={(e) =>
+                                handleProductChange(product.id, 'boxWeight', e.target.value)
+                              }
+                              placeholder="0.00"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D7C66] focus:border-transparent"
+                            />
+                          )}
+                        </td>
+                        {formData.orderType !== 'local' && (
+                          <>
+                            <td className="px-4 py-3">
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={product.numBoxes}
+                                onChange={(e) => handleProductChange(product.id, 'numBoxes', e.target.value)}
+                                placeholder="0"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D7C66] focus:border-transparent"
+                              />
+                            </td>
+                            <td className="px-4 py-3">
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={product.grossWeight}
+                                onChange={(e) =>
+                                  handleProductChange(product.id, 'grossWeight', e.target.value)
+                                }
+                                placeholder="0.00"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D7C66] focus:border-transparent"
+                              />
+                            </td>
+                          </>
+                        )}
+                        <td className="px-4 py-3">
+                          <button
+                            type="button"
+                            onClick={() => removeProduct(product.id)}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors duration-150"
+                            disabled={products.length === 1}
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        </td>
+                      </tr>
+                      {formData.orderType === 'local' && product.showMoreDetails && (
+                        <tr className="bg-gray-50 border-b border-gray-100">
+                          <td colSpan="4" className="px-4 py-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  Type of Packing
+                                </label>
+                                <select
+                                  value={product.packingType}
+                                  onChange={(e) => handleProductChange(product.id, 'packingType', e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D7C66] focus:border-transparent"
+                                >
+                                  <option value="">Select packing</option>
+                                  {packingOptions.map((item) => (
+                                    <option key={item.id} value={item.name}>
+                                      {item.name}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  Box Weight (kg)
+                                </label>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  value={product.boxWeight}
+                                  onChange={(e) =>
+                                    handleProductChange(product.id, 'boxWeight', e.target.value)
+                                  }
+                                  placeholder="0.00"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D7C66] focus:border-transparent"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  No of Boxes/Bags
+                                </label>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  value={product.numBoxes}
+                                  onChange={(e) => handleProductChange(product.id, 'numBoxes', e.target.value)}
+                                  placeholder="0"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D7C66] focus:border-transparent"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  Gross Weight (kg)
+                                </label>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  value={product.grossWeight}
+                                  onChange={(e) =>
+                                    handleProductChange(product.id, 'grossWeight', e.target.value)
+                                  }
+                                  placeholder="0.00"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D7C66] focus:border-transparent"
+                                />
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   ))}
                 </tbody>
-              </table>
+                  </table>
+              
             </div>
             <button
               type="button"
